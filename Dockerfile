@@ -4,10 +4,12 @@ FROM nginx:1.27-alpine
 # /etc/nginx/templates/*.template on boot, so ${PORT} is filled in there.
 ENV PORT=8080
 
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY index.html /usr/share/nginx/html/index.html
+# Substitute ONLY $PORT. Without this filter envsubst considers every env var
+# in the container, and any stray one named e.g. `uri` would clobber nginx's
+# own $uri / $cache_control variables in the template.
+ENV NGINX_ENVSUBST_FILTER="^PORT$"
 
-# Optional assets — copied only if present (see .dockerignore notes in README)
-COPY robots.txt sitemap.xml /usr/share/nginx/html/
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY index.html robots.txt sitemap.xml /usr/share/nginx/html/
 
 EXPOSE 8080

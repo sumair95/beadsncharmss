@@ -1,3 +1,13 @@
+# Cache policy is resolved here rather than with per-location add_header,
+# because an add_header inside a location block cancels *every* add_header
+# inherited from the server block — which would strip the security headers
+# below from exactly the pages that need them. Exact matches win over regexes.
+map $uri $cache_control {
+    default                                      "public, max-age=3600";
+    ~*\.(jpg|jpeg|png|gif|svg|webp|ico|woff2?)$  "public, max-age=2592000, immutable";
+    /index.html                                  "no-cache, must-revalidate";
+}
+
 server {
     listen       ${PORT};
     server_name  _;
@@ -11,6 +21,11 @@ server {
     gzip_types        text/plain text/css text/xml application/javascript
                       application/json image/svg+xml;
 
+    # ── Caching ────────────────────────────────────────────────
+    # index.html is never cached, so a redeploy reaches returning visitors
+    # immediately. Static assets get a long TTL.
+    add_header Cache-Control $cache_control always;
+
     # ── Security headers ───────────────────────────────────────
     add_header X-Content-Type-Options   "nosniff"            always;
     add_header X-Frame-Options          "DENY"               always;
@@ -23,18 +38,6 @@ server {
     # could ever reach.
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob: https://kjwhxuqbrcerqfuikcmv.supabase.co; connect-src https://kjwhxuqbrcerqfuikcmv.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
 
-    # ── Caching ────────────────────────────────────────────────
-    # index.html must never be cached, or a redeploy won't reach returning
-    # visitors. Static assets get a long TTL.
-    location = /index.html {
-        add_header Cache-Control "no-cache, must-revalidate" always;
-    }
-
-    location ~* \.(jpg|jpeg|png|gif|svg|webp|ico|woff2?)$ {
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
-
     # ── Routing ────────────────────────────────────────────────
     # Single-page app: unknown paths fall back to the store shell.
     location / {
@@ -44,7 +47,7 @@ server {
     # Railway health check
     location = /healthz {
         access_log off;
-        add_header Content-Type text/plain;
+        default_type text/plain;
         return 200 'ok';
     }
 }
