@@ -1,0 +1,50 @@
+server {
+    listen       ${PORT};
+    server_name  _;
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    # ── Compression ────────────────────────────────────────────
+    gzip              on;
+    gzip_vary         on;
+    gzip_min_length   1024;
+    gzip_types        text/plain text/css text/xml application/javascript
+                      application/json image/svg+xml;
+
+    # ── Security headers ───────────────────────────────────────
+    add_header X-Content-Type-Options   "nosniff"            always;
+    add_header X-Frame-Options          "DENY"               always;
+    add_header Referrer-Policy          "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy       "geolocation=(), microphone=(), camera=()" always;
+
+    # The store is one inline-script HTML file talking to Supabase over REST,
+    # so 'unsafe-inline' is required for scripts/styles. connect-src and img-src
+    # stay locked to Supabase + Google Fonts, which limits what injected markup
+    # could ever reach.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob: https://kjwhxuqbrcerqfuikcmv.supabase.co; connect-src https://kjwhxuqbrcerqfuikcmv.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+
+    # ── Caching ────────────────────────────────────────────────
+    # index.html must never be cached, or a redeploy won't reach returning
+    # visitors. Static assets get a long TTL.
+    location = /index.html {
+        add_header Cache-Control "no-cache, must-revalidate" always;
+    }
+
+    location ~* \.(jpg|jpeg|png|gif|svg|webp|ico|woff2?)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # ── Routing ────────────────────────────────────────────────
+    # Single-page app: unknown paths fall back to the store shell.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Railway health check
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 'ok';
+    }
+}
