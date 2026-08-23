@@ -1,0 +1,6 @@
+# Keep container/config files LF so they behave identically on Linux builders.
+* text=auto
+Dockerfile        text eol=lf
+*.template        text eol=lf
+*.sh              text eol=lf
+robots.txt        text eol=lf
