@@ -1,3 +1,6 @@
+-- SUPERSEDED: older schema, kept for reference only.
+-- Use ../supabase.sql instead.
+
 -- ============================================================
 --  BEADS N CHARMS — Supabase Database Schema
 --  Run this entire file in Supabase → SQL Editor → New Query
