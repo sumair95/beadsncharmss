@@ -8,8 +8,18 @@ map $uri $cache_control {
     /index.html                                  "no-cache, must-revalidate";
 }
 
+# www -> apex. Both domains point at this one service, so without this they
+# would serve identical content under two hostnames. The catch-all server
+# below stays the default, so Railway's own *.up.railway.app domain and the
+# health check are unaffected.
 server {
-    listen       ${PORT};
+    listen      ${PORT};
+    server_name www.beadsncharmss.com;
+    return 301  https://beadsncharmss.com$request_uri;
+}
+
+server {
+    listen       ${PORT} default_server;
     server_name  _;
     root         /usr/share/nginx/html;
     index        index.html;
