@@ -28,3 +28,31 @@ beadsncharmss.com with auto-deploy.
 
 **Left deliberately undone:** admin auth hardening and URL routing — both
 scoped in `NEXT_STEPS.md`.
+
+## 2026-08-24 — bnc-final build, Supabase Auth, schema migration
+
+**Done:**
+- Replaced the single-file store with the multi-file `bnc-final` build
+  (variants, stock, discounts, reviews, analytics, WhatsApp alerts). Merged
+  rather than overwritten — the zip ships no Dockerfile, so a wholesale push
+  would have broken the Railway build.
+- Moved admin auth from a hardcoded password to Supabase Auth; added
+  `TO authenticated` policies so the anon key keeps only catalogue-read and
+  order-insert.
+- Locked storage writes to authenticated. They were public.
+- Made `supabase.sql` genuinely idempotent (policies *and* triggers).
+- Added an `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` migration block: the
+  live DB was built from the older 7-table schema and was missing 15 columns
+  the new code needs. `CREATE TABLE IF NOT EXISTS` would have skipped them
+  silently, then the policy step would have failed on `products.active`.
+- Verified RLS against the live database with the anon key. See NEXT_STEPS.
+
+**Gotchas worth remembering:**
+- Four copies of the schema existed on disk; pasting a stale one reproduced an
+  already-fixed error. Repo now has exactly one `supabase.sql`.
+- A PostgREST PATCH/DELETE with a filter matching zero rows returns 204
+  whether or not RLS allows it. To test write permission, do a no-op update
+  against a **real** row with `Prefer: return=representation` and count the
+  returned rows.
+
+**Next:** Railway deploy verification, DNS for the apex domain, og-image.jpg.

@@ -1,82 +1,66 @@
 # Next steps
 
-Ordered by urgency. Updated 2026-08-23.
+Ordered by urgency. Updated 2026-08-24.
 
 ---
 
-## 1. Verify Supabase RLS — do this first 🔴
+## ✅ Done — Supabase RLS verified (2026-08-24)
 
-The anon key is in the client (normal and unavoidable for a static site), so
-**whatever the anon role is allowed to do, the public can do.** Check the
-policies on every table in the Supabase dashboard:
+`supabase.sql` applied cleanly. Verified against the live database with the
+public anon key:
 
-| Table | anon should be able to | anon must NOT be able to |
-|---|---|---|
-| `products` | `SELECT` | `INSERT` / `UPDATE` / `DELETE` |
-| `categories` | `SELECT` | `INSERT` / `UPDATE` / `DELETE` |
-| `orders` | `INSERT` | `SELECT` (would leak every customer's address) |
-| `order_items` | `INSERT` | `SELECT` |
-| `customers` | `INSERT` / upsert | `SELECT` |
-| `email_subscribers` | `INSERT` / upsert | `SELECT` |
-| `contact_messages` | `INSERT` | `SELECT` |
+- Public can read `products`, `categories`, approved `reviews`, active
+  `discount_codes` — nothing else.
+- `orders`, `customers`, `order_items`, `email_subscribers`,
+  `contact_messages`, `analytics`, `abandoned_carts` return no rows publicly.
+- Anon cannot edit or delete catalogue rows (confirmed with a no-op UPDATE
+  against a real row, which RLS filtered out).
+- Storage uploads are authenticated-only; the bucket is no longer publicly
+  writable.
+- Anon can still INSERT orders, so checkout works.
 
-Note the tension: the admin panel currently reads `orders`, `email_subscribers`
-and writes `products` **using the anon key**. So locking anon down correctly
-*will* break the admin panel — which is exactly why item 2 has to happen with it.
-Do them together.
+Caveat: the `orders` read check ran against an empty table, so it is
+consistent with both "blocked" and "empty". Re-run it once a real order
+exists to make it conclusive.
 
-If anon can currently `SELECT` from `orders`, treat every customer name, phone,
-address and email in that table as already public.
+## ✅ Done — admin moved to Supabase Auth (2026-08-24)
 
-## 2. Move admin auth to Supabase Auth 🔴
+No password in the source. The panel signs in via Supabase Auth and sends the
+session token, which is what the `TO authenticated` policies grant against.
 
-`const ADMIN_PW='beadsncharms2025'` sits in `index.html` in plain text. Anyone
-who opens View Source can sign in and delete the catalogue, apply a 90% discount,
-or read every customer record.
+## 1. Supply `og-image.jpg`
 
-No client-side password check can ever be secure — the fix is real auth:
+Shares to WhatsApp and Instagram have no preview image. Drop a **1200x630**
+JPG at the repo root named `og-image.jpg` and push — the meta tags already
+point at it, and the Dockerfile now serves any new asset automatically.
 
-1. Create an admin user in Supabase Auth.
-2. Replace the password prompt with `signInWithPassword`.
-3. Write RLS policies keyed on `auth.role() = 'authenticated'` for the
-   admin-only reads and writes.
-4. Use the session token instead of the anon key for admin requests.
+## 2. URL routing
 
-Until this ships, treat the admin panel as public and rotate that password out
-of the repo.
+The store is one in-memory SPA. Every page is `beadsncharmss.com/` — so
+product links can't be shared, Back does nothing, and Google can only index
+the homepage, wasting the keyword meta in `<head>`. Fix with
+`history.pushState` in `renderPage()` plus a `popstate` handler and a path
+parser on boot. nginx already falls back to `index.html`, so no server change
+is needed. Add the resulting URLs to `sitemap.xml`.
 
-## 3. Supply `og-image.jpg` 🟠
+## 3. Order notifications are not reliable
 
-Shares to WhatsApp and Instagram currently have no preview image. Drop a
-**1200×630** JPG at the repo root named `og-image.jpg` and push — the meta tags
-already point at it. A clean flat-lay of your bestsellers works well.
+`notifyOwnerWhatsApp()` builds a `wa.me` link, which opens WhatsApp in the
+*customer's* browser. If they close the tab, you never hear about the order.
+The dependable version is a Supabase Edge Function triggered on insert to
+`orders`, sending via the WhatsApp Business API or email (Resend/Postmark).
+The same function should send the customer their confirmation — checkout
+promises one today and nothing sends it.
 
-## 4. URL routing 🟠
+## 4. Smaller items
 
-The store is one in-memory SPA. Every page is `beadsncharmss.com/` — so:
-
-- product links can't be shared or sent to a customer,
-- the browser Back button does nothing,
-- **Google can only ever index the homepage**, which wastes the extensive
-  keyword meta already written into `<head>`.
-
-Fix with `history.pushState` in `renderPage()` plus a `popstate` handler and a
-path parser on boot. nginx already falls back to `index.html` for unknown paths,
-so no server change is needed. Add the resulting URLs to `sitemap.xml`.
-
-## 5. Smaller items 🟡
-
-- **Order confirmation emails.** Checkout collects an email and promises "your
-  order confirmation will be sent here" — nothing sends one. Needs a Supabase
-  Edge Function on insert to `orders` (Resend / Postmark).
-- **Newsletter signup has no UI.** `sbSubscribe()` is written and working but
-  nothing calls it. A footer signup field would start building the list.
-- **Wishlist is fake.** The ♡ button just fires a toast; nothing is saved.
-- **Contact form doesn't confirm delivery.** `sbSaveContact()` swallows errors,
-  so the success modal shows even when the write failed.
-- **Keyboard accessibility.** Navigation uses `<a>` and `<div>` with `onclick`,
-  no `href`, `role` or `tabindex` — unreachable by keyboard and unclear to
-  screen readers.
-- **Product detail thumbnails are decorative** — the 2nd and 3rd are hardcoded
-  ✨ and 💜 regardless of the product. Either wire up multiple images or drop them.
-- **Instagram strip is hardcoded gradients**, not real posts.
+- **`customers.password_hash` should not be used.** It implies storing
+  customer credentials yourself. Supabase Auth already does this properly.
+- **Discount codes are publicly listable** — anyone can `GET
+  /rest/v1/discount_codes` and read WELCOME10, SAVE200, FREESHIP, BNC20.
+  Inherent to client-side validation; just don't treat them as private.
+- **Anon can UPDATE `customers` and `abandoned_carts`** (`Public upsert
+  customers` uses `USING (true)`). They can't read them, but they can blindly
+  overwrite. Tighten if it ever matters.
+- **Keyboard accessibility** — nav uses `<div>`/`<a>` with `onclick` and no
+  `href`/`role`/`tabindex`.
