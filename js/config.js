@@ -16,6 +16,14 @@ const CONFIG = {
 // through Supabase Auth (see Auth below) so the credential never ships in
 // the source, and RLS can tell the shop owner apart from the public.
 
+
+// ── HTML escaping ─────────────────────────────────────────────
+// Everything customer-supplied passes through this before touching
+// innerHTML. Reviews and orders are attacker-controlled and render inside
+// the admin panel, where the Supabase session token lives.
+const ESC_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ESC_MAP[c]); }
+
 // ── Admin auth ────────────────────────────────────────────────
 // Signs in against Supabase Auth and keeps the session token. Admin requests
 // send that token instead of the anon key, which is what the "TO authenticated"
@@ -521,7 +529,6 @@ const COLORS = [
 const DEFAULT_PRODS = [
   { id:'p1', name:'Pearl Beaded Bracelet',    category_id:'bracelets',   price:850,  on_sale:false, sale_percent:0,  description:'Delicate freshwater pearl bracelet with gold-filled clasp.', tags:['pearl','bracelet'], emoji:'📿', color:COLORS[0], in_stock:true, stock_qty:25, featured:true,  has_variants:false, variants:[], images:[] },
   { id:'p2', name:'Moon & Star Charm Set',    category_id:'charms-phone',price:650,  on_sale:true,  sale_percent:30, description:'Set of 3 celestial phone charms.', tags:['moon','star'], emoji:'🌙', color:COLORS[1], in_stock:true, stock_qty:15, featured:true,  has_variants:false, variants:[], images:[] },
-  { id:'p3', name:'Lilac Flower Ring',        category_id:'charms',      price:550,  on_sale:false, sale_percent:0,  description:'Dainty adjustable ring with lilac flower resin detail.', tags:['ring','flower'], emoji:'💜', color:COLORS[2], in_stock:true, stock_qty:30, featured:true,  has_variants:false, variants:[], images:[] },
   { id:'p4', name:'Permanent Gold Bracelet',  category_id:'permanent',   price:2500, on_sale:false, sale_percent:0,  description:'Signature permanent bracelet welded onto your wrist.', tags:['permanent','gold'], emoji:'✨', color:COLORS[3], in_stock:true, stock_qty:10, featured:true,  has_variants:false, variants:[], images:[] },
   { id:'p5', name:'Butterfly Keychain',       category_id:'keychains',   price:450,  on_sale:true,  sale_percent:22, description:'Beaded butterfly keychain in purple tones.', tags:['butterfly','keychain'], emoji:'🦋', color:COLORS[4], in_stock:true, stock_qty:20, featured:true,  has_variants:false, variants:[], images:[] },
   { id:'p6', name:'Crystal Drop Earrings',    category_id:'earrings',    price:700,  on_sale:false, sale_percent:0,  description:'Amethyst-toned crystal drop earrings.', tags:['earrings','crystal'], emoji:'💎', color:COLORS[5], in_stock:true, stock_qty:18, featured:true,  has_variants:false, variants:[], images:[] },

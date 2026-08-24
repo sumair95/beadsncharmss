@@ -17,22 +17,22 @@ function renderHome() {
     <div class="hero-left">
       <div class="hero-eyebrow">Handmade Jewellery Online Pakistan</div>
       <h1 class="hero-h1">Wear<br>What<br>You <em>Pin</em></h1>
-      <p class="hero-body">Pakistan's favourite Pinterest-inspired jewellery brand. Handcrafted rings, beaded bracelets, phone charms & permanent jewellery — delivered to your doorstep with Cash on Delivery.</p>
+      <p class="hero-body">Pakistan's favourite Pinterest-inspired jewellery brand. Handcrafted beaded bracelets, phone charms & permanent jewellery — delivered to your doorstep with Cash on Delivery.</p>
       <div class="hero-btns">
-        <button class="btn-fill" onclick="renderPage('shop')">Shop Now</button>
-        ${saleProds.length ? `<button class="btn-outline" onclick="renderPage('shop','sale')">Sale — Up to ${maxOff}% Off</button>` : ''}
+        <button class="btn-fill" onclick="navigate('shop')">Shop Now</button>
+        ${saleProds.length ? `<button class="btn-outline" onclick="navigate('shop','sale')">Sale — Up to ${maxOff}% Off</button>` : ''}
       </div>
     </div>
     <div class="hero-right">
       <div class="hero-mosaic">
         ${mosaic.map(p => {
           const imgContent = p.image_url
-            ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<span style=\\"font-size:3.5rem\\">${p.emoji}</span>'">`
+            ? `<img src="${p.image_url}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<span style=\\"font-size:3.5rem\\">${p.emoji}</span>'">`
             : `<span style="font-size:3.5rem">${p.emoji}</span>`;
-          return `<div class="mosaic-card" onclick="renderPage('product','${p.id}')">
+          return `<div class="mosaic-card" onclick="navigate('product','${p.id}')">
             <div class="mosaic-img" style="background:${p.color}">${imgContent}</div>
             <div class="mosaic-info">
-              <div class="mosaic-name">${p.name}</div>
+              <div class="mosaic-name">${esc(p.name)}</div>
               <div class="mosaic-price">${formatPKR(salePrice(p))}${p.on_sale ? `<span class="mosaic-badge">-${p.sale_percent}%</span>` : ''}</div>
             </div>
           </div>`;
@@ -45,10 +45,10 @@ function renderHome() {
     <div class="container">
       <div class="sec-hdr">
         <div><div class="sec-eyebrow">Browse by category</div><h2 class="sec-title">Our <em>Collections</em></h2></div>
-        <span class="link-arrow" onclick="renderPage('shop')" style="cursor:pointer">View all →</span>
+        <span class="link-arrow" onclick="navigate('shop')" style="cursor:pointer">View all →</span>
       </div>
       <div class="cat-strip">
-        ${cats.map(c => `<div class="cat-pill" onclick="renderPage('shop','${c.id}')"><span class="ce">${c.emoji}</span>${c.name}</div>`).join('')}
+        ${cats.map(c => `<div class="cat-pill" onclick="navigate('shop','${c.id}')"><span class="ce">${c.emoji}</span>${esc(c.name)}</div>`).join('')}
       </div>
     </div>
   </section>
@@ -57,7 +57,7 @@ function renderHome() {
     <div class="container">
       <div class="sec-hdr">
         <div><div class="sec-eyebrow">Handpicked for you</div><h2 class="sec-title">Featured <em>Pieces</em></h2></div>
-        <span class="link-arrow" onclick="renderPage('shop')" style="cursor:pointer">View all →</span>
+        <span class="link-arrow" onclick="navigate('shop')" style="cursor:pointer">View all →</span>
       </div>
       <div class="products-grid">${featured.map(productCardHTML).join('')}</div>
     </div>
@@ -68,7 +68,7 @@ function renderHome() {
       <div class="sale-eyebrow">Limited time — Pakistan exclusive</div>
       <div class="sale-title">Sale is Live ✦</div>
       <div class="sale-sub">Up to <strong>${maxOff}%</strong> off on selected pieces</div>
-      <button class="btn-white" onclick="renderPage('shop','sale')">Shop Sale Now</button>
+      <button class="btn-white" onclick="navigate('shop','sale')">Shop Sale Now</button>
     </div>
   </section>` : ''}
 
@@ -84,7 +84,7 @@ function renderHome() {
           <h2 class="sec-title" style="margin-bottom:20px">From Beads to <em>Forever Pieces</em></h2>
           <p class="about-body">What started as a love for beaded accessories grew into Pakistan's go-to handmade jewellery brand — offering everything from playful phone charms to permanent bracelets welded right onto your wrist.</p>
           <p class="about-body">Every piece is handpicked with intention. We believe jewellery should feel like <em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--p2)">you</em>.</p>
-          <button class="btn-outline" onclick="renderPage('about')" style="border-radius:50px">Our Story →</button>
+          <button class="btn-outline" onclick="navigate('about')" style="border-radius:50px">Our Story →</button>
         </div>
       </div>
     </div>
@@ -132,7 +132,7 @@ function renderShop(filterCat = null) {
   return navHTML('shop') + `
   <div class="shop-hero">
     <div class="shop-hero-inner">
-      <div class="breadcrumb"><a onclick="renderPage('home')">Home</a><span>/</span>Shop${activeCat ? `<span>/</span>${label}` : ''}${isSale ? '<span>/</span>Sale' : ''}</div>
+      <div class="breadcrumb"><a onclick="navigate('home')">Home</a><span>/</span>Shop${activeCat ? `<span>/</span>${label}` : ''}${isSale ? '<span>/</span>Sale' : ''}</div>
       <h1 class="sec-title" style="margin-bottom:8px">${label}</h1>
     </div>
   </div>
@@ -140,10 +140,10 @@ function renderShop(filterCat = null) {
     <aside class="sidebar">
       <div class="sidebar-section">
         <div class="sidebar-title">Categories</div>
-        <div class="filter-opt ${!activeCat && !isSale ? 'active' : ''}" onclick="renderPage('shop')">All Products</div>
-        <div class="filter-opt ${isSale ? 'active' : ''}" onclick="renderPage('shop','sale')">🏷️ On Sale</div>
-        ${cats.map(c => `<div class="filter-opt ${activeCat === c.id ? 'active' : ''}" onclick="renderPage('shop','${c.id}')">
-          ${c.emoji} ${c.name}
+        <div class="filter-opt ${!activeCat && !isSale ? 'active' : ''}" onclick="navigate('shop')">All Products</div>
+        <div class="filter-opt ${isSale ? 'active' : ''}" onclick="navigate('shop','sale')">🏷️ On Sale</div>
+        ${cats.map(c => `<div class="filter-opt ${activeCat === c.id ? 'active' : ''}" onclick="navigate('shop','${c.id}')">
+          ${c.emoji} ${esc(c.name)}
           <span class="filter-opt-count">${DB.getProds().filter(p => p.category_id === c.id).length}</span>
         </div>`).join('')}
       </div>
@@ -197,7 +197,7 @@ function applyShopFilters() {
 // ── PRODUCT DETAIL ────────────────────────────────────────────
 async function renderProductPage(id) {
   const p = DB.getProd(id);
-  if (!p) return navHTML() + `<div style="padding:80px;text-align:center"><h2 style="font-family:'Cormorant Garamond',serif">Product not found</h2><button class="btn-fill" onclick="renderPage('shop')" style="margin-top:20px;border-radius:50px;padding:12px 28px">Back to Shop</button></div>` + footerHTML();
+  if (!p) return navHTML() + `<div style="padding:80px;text-align:center"><h2 style="font-family:'Cormorant Garamond',serif">Product not found</h2><button class="btn-fill" onclick="navigate('shop')" style="margin-top:20px;border-radius:50px;padding:12px 28px">Back to Shop</button></div>` + footerHTML();
 
   DB.track('product_view', { product_id: id });
   const sp = salePrice(p);
@@ -209,7 +209,7 @@ async function renderProductPage(id) {
   const allImages = [p.image_url, ...(p.images || [])].filter(Boolean);
   const galleryHTML = allImages.length
     ? `<div class="pdp-main-img" id="mainImg" style="background:${p.color}">
-        <img src="${allImages[0]}" id="mainImgEl" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:24px" onerror="this.outerHTML='<span style=\\"font-size:7rem\\">${p.emoji}</span>'">
+        <img src="${allImages[0]}" id="mainImgEl" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:24px" onerror="this.outerHTML='<span style=\\"font-size:7rem\\">${p.emoji}</span>'">
        </div>
        <div class="pdp-thumb-row">
          ${allImages.map((img, i) => `<div class="pdp-thumb ${i === 0 ? 'active' : ''}" onclick="switchImg('${img}',this)">
@@ -223,9 +223,9 @@ async function renderProductPage(id) {
   const variantsHTML = p.has_variants && p.variants?.length
     ? p.variants.map(v => `
       <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:600;color:var(--dk);display:block;margin-bottom:8px">${v.name}</label>
+        <label style="font-size:12px;font-weight:600;color:var(--dk);display:block;margin-bottom:8px">${esc(v.name)}</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap" id="variant-${v.name.replace(/\s/g,'')}">
-          ${v.options.map(opt => `<button class="variant-btn" onclick="selectVariant('${v.name}','${opt}',this)" 
+          ${v.options.map(opt => `<button class="variant-btn" onclick="selectVariant('${esc(v.name)}','${opt}',this)" 
             style="padding:8px 16px;border:1.5px solid rgba(196,168,216,.4);border-radius:8px;font-size:13px;background:#fff;cursor:pointer;transition:all .15s">
             ${opt}
           </button>`).join('')}
@@ -240,17 +240,17 @@ async function renderProductPage(id) {
   return navHTML('shop') + `
   <div class="container" style="padding-top:24px">
     <div class="breadcrumb">
-      <a onclick="renderPage('home')">Home</a><span>/</span>
-      <a onclick="renderPage('shop')">Shop</a><span>/</span>
-      <a onclick="renderPage('shop','${p.category_id}')">${catName(p.category_id)}</a><span>/</span>
-      ${p.name}
+      <a onclick="navigate('home')">Home</a><span>/</span>
+      <a onclick="navigate('shop')">Shop</a><span>/</span>
+      <a onclick="navigate('shop','${p.category_id}')">${catName(p.category_id)}</a><span>/</span>
+      ${esc(p.name)}
     </div>
   </div>
   <div class="pdp-wrap" itemscope itemtype="https://schema.org/Product">
     <div class="pdp-gallery">${galleryHTML}</div>
     <div class="pdp-info">
       <div class="pdp-cat">${catName(p.category_id)}</div>
-      <h1 class="pdp-name" itemprop="name">${p.name}</h1>
+      <h1 class="pdp-name" itemprop="name">${esc(p.name)}</h1>
       ${reviews.length ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div>${starsHTML(avgRating)}</div>
         <span style="font-size:13px;color:var(--lt)">${reviews.length} review${reviews.length !== 1 ? 's' : ''}</span>
@@ -263,7 +263,7 @@ async function renderProductPage(id) {
       </div>
       ${p.stock_qty <= CONFIG.LOW_STOCK_THRESHOLD && p.stock_qty > 0 && p.in_stock ? `<div style="font-size:12px;color:var(--sale);font-weight:600;margin-bottom:12px">⚠️ Only ${p.stock_qty} left in stock!</div>` : ''}
       ${!p.in_stock ? '<div class="badge-oos" style="display:inline-block;margin-bottom:16px;padding:6px 14px;border-radius:8px">Currently Out of Stock</div>' : ''}
-      <p class="pdp-desc" itemprop="description">${p.description || ''}</p>
+      <p class="pdp-desc" itemprop="description">${esc(p.description || '')}</p>
       ${variantsHTML}
       <input type="hidden" id="selectedVariant" value="">
       <button class="pdp-add ${!p.in_stock ? 'oos' : ''}" id="addToCartBtn"
@@ -285,10 +285,10 @@ async function renderProductPage(id) {
       ${reviews.slice(0, 5).map(r => `
         <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid rgba(196,168,216,.15)">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <strong style="font-size:14px">${r.customer_name}</strong>
+            <strong style="font-size:14px">${esc(r.customer_name)}</strong>
             <div>${starsHTML(r.rating)}</div>
           </div>
-          <p style="font-size:13px;color:var(--mid)">${r.comment || ''}</p>
+          <p style="font-size:13px;color:var(--mid)">${esc(r.comment || '')}</p>
         </div>`).join('')}
     </div>
   </div>` : ''}
@@ -377,7 +377,7 @@ function renderCheckout() {
   const items = Cart.get();
   if (!items.length) return navHTML() + `<div style="padding:100px;text-align:center">
     <h2 style="font-family:'Cormorant Garamond',serif;font-size:32px;margin-bottom:12px">Your cart is empty</h2>
-    <button class="btn-fill" onclick="renderPage('shop')" style="border-radius:50px;padding:14px 32px;font-size:13px">Browse Shop</button>
+    <button class="btn-fill" onclick="navigate('shop')" style="border-radius:50px;padding:14px 32px;font-size:13px">Browse Shop</button>
   </div>` + footerHTML();
 
   const sub = Cart.total();
@@ -385,7 +385,7 @@ function renderCheckout() {
 
   return navHTML() + `
   <div class="container" style="padding-top:24px">
-    <div class="breadcrumb"><a onclick="renderPage('home')">Home</a><span>/</span>Checkout</div>
+    <div class="breadcrumb"><a onclick="navigate('home')">Home</a><span>/</span>Checkout</div>
   </div>
   <div class="checkout-wrap">
     <div>
@@ -480,7 +480,7 @@ function renderCheckout() {
             const img = p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : p.emoji;
             return `<div class="oi-row">
               <div class="oi-thumb" style="background:${p.color}">${img}</div>
-              <div class="oi-name">${p.name}${item.variant ? `<div class="oi-qty">${item.variant}</div>` : ''}
+              <div class="oi-name">${esc(p.name)}${item.variant ? `<div class="oi-qty">${esc(item.variant)}</div>` : ''}
                 <div class="oi-qty">× ${item.qty}</div>
               </div>
               <div class="oi-price">${formatPKR(sp * item.qty)}</div>
@@ -639,14 +639,14 @@ async function trackOrder() {
       <div style="border-radius:14px;padding:24px;border:1px solid rgba(196,168,216,.15);background:#fff">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <strong style="font-size:14px">${o.id}</strong>
-          <span style="background:${statusBg[o.status]||'#eee'};color:${statusColors[o.status]||'#333'};padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;text-transform:capitalize">${o.status}</span>
+          <span style="background:${statusBg[o.status]||'#eee'};color:${statusColors[o.status]||'#333'};padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;text-transform:capitalize">${esc(o.status)}</span>
         </div>
         <div style="font-size:13px;color:var(--mid)">
           <div style="margin-bottom:6px">📅 Placed: ${new Date(o.created_at).toLocaleDateString('en-PK', { day:'numeric', month:'long', year:'numeric' })}</div>
           <div style="margin-bottom:6px">📦 Items: ${formatPKR(o.subtotal)}</div>
           <div style="margin-bottom:6px">🚚 Delivery: ${o.delivery === 0 ? 'FREE' : formatPKR(o.delivery)}</div>
           <div style="font-weight:700;color:var(--dk);margin-top:10px">Total Paid: ${formatPKR(o.total)}</div>
-          ${o.tracking_number ? `<div style="margin-top:10px;padding:10px;background:var(--p6);border-radius:8px">📦 Tracking: <strong>${o.tracking_number}</strong></div>` : ''}
+          ${o.tracking_number ? `<div style="margin-top:10px;padding:10px;background:var(--p6);border-radius:8px">📦 Tracking: <strong>${esc(o.tracking_number)}</strong></div>` : ''}
         </div>
       </div>`;
   } catch(e) { result.innerHTML = '<p style="color:var(--sale);font-size:13px">Could not fetch order. Please try again.</p>'; }
@@ -667,8 +667,8 @@ function renderAbout() {
         <span class="sec-eyebrow">Our Story</span>
         <h2 class="sec-title" style="margin-bottom:20px">From Beads to <em>Forever Pieces</em></h2>
         <p style="font-size:15px;color:var(--mid);line-height:1.85;margin-bottom:16px">Beads N Charms began as a simple love for beaded accessories — colourful, playful, and personal. What started as handmade bracelets gifted to friends quickly grew into one of Pakistan's favourite handmade jewellery brands.</p>
-        <p style="font-size:15px;color:var(--mid);line-height:1.85;margin-bottom:32px">Today, we offer a full range of handpicked jewellery online — from dainty rings and phone charms to permanent jewellery, welded right onto your wrist. We ship across Pakistan with Cash on Delivery available.</p>
-        <button class="btn-fill" onclick="renderPage('shop')" style="border-radius:50px;padding:14px 32px;font-size:13px">Shop the Collection</button>
+        <p style="font-size:15px;color:var(--mid);line-height:1.85;margin-bottom:32px">Today, we offer a full range of handpicked jewellery online — from delicate charms and beaded bracelets to permanent jewellery, welded right onto your wrist. We ship across Pakistan with Cash on Delivery available.</p>
+        <button class="btn-fill" onclick="navigate('shop')" style="border-radius:50px;padding:14px 32px;font-size:13px">Shop the Collection</button>
       </div>
       <div style="background:var(--p6);border-radius:24px;height:400px;display:flex;align-items:center;justify-content:center;font-size:7rem">📿</div>
     </div>
@@ -680,7 +680,7 @@ function renderAbout() {
     </div>
     <div class="perm-banner">
       <div><h2>Permanent Jewellery ✦</h2><p>Our signature service — a fine chain bracelet, anklet, or necklace welded onto your body with no clasp. It stays forever. Available at our pop-up stalls.</p></div>
-      <button class="btn-white" onclick="renderPage('contact')" style="border-radius:50px;padding:14px 28px;white-space:nowrap">Book a Session →</button>
+      <button class="btn-white" onclick="navigate('contact')" style="border-radius:50px;padding:14px 28px;white-space:nowrap">Book a Session →</button>
     </div>
   </div>` + footerHTML();
 }

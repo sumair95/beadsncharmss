@@ -336,10 +336,33 @@ ON CONFLICT (code) DO NOTHING;
 INSERT INTO products (id, name, category_id, price, on_sale, sale_percent, description, tags, emoji, color, in_stock, stock_qty, featured, has_variants) VALUES
   ('p1','Pearl Beaded Bracelet','bracelets',850,false,0,'Delicate freshwater pearl bracelet with gold-filled clasp. Adjustable sizing, perfect for stacking.',ARRAY['pearl','bracelet','minimal'],'📿','linear-gradient(135deg,#F4EDFC,#E8D5F5)',true,25,true,false),
   ('p2','Moon & Star Charm Set','charms-phone',650,true,30,'Set of 3 celestial phone charms — crescent moon, star, and cloud. Detachable lobster clasp.',ARRAY['moon','star','charm'],'🌙','linear-gradient(135deg,#C4A8D8,#9B7BB8)',true,15,true,false),
-  ('p3','Lilac Flower Ring','charms',550,false,0,'Dainty adjustable ring with hand-painted lilac flower resin detail. One size fits most.',ARRAY['ring','flower','lilac'],'💜','linear-gradient(135deg,#E8D5F5,#C4A8D8)',true,30,true,false),
   ('p4','Permanent Gold Bracelet','permanent',2500,false,0,'Our signature permanent bracelet — welded onto your wrist for a forever look. Gold-filled chain.',ARRAY['permanent','gold','forever'],'✨','linear-gradient(135deg,#F7F3EE,#EDE6DC)',true,10,true,false),
   ('p5','Butterfly Keychain','keychains',450,true,22,'Beaded butterfly keychain in purple and pink tones. Approx 12cm length.',ARRAY['butterfly','keychain'],'🦋','linear-gradient(135deg,#9B7BB8,#6B4E9B)',true,20,true,false),
   ('p6','Crystal Drop Earrings','earrings',700,false,0,'Amethyst-toned crystal drop earrings with surgical steel posts. Hypoallergenic.',ARRAY['earrings','crystal'],'💎','linear-gradient(135deg,#EDE6DC,#E8D5F5)',true,18,true,false),
   ('p7','Layered Chain Necklace','necklaces',1200,true,21,'Three-layer gold-filled chain necklace with tiny charm pendants. Adjustable 40-45cm.',ARRAY['necklace','layered'],'📿','linear-gradient(135deg,#F4EDFC,#E8D5F5)',true,12,false,false),
   ('p8','Beaded Friendship Bracelet','bracelets',650,true,23,'Colourful seed bead bracelet in purple, lilac and beige. Adjustable.',ARRAY['bracelet','friendship'],'🌈','linear-gradient(135deg,#EDE6DC,#E8D5F5)',true,22,false,false)
 ON CONFLICT (id) DO NOTHING;
+
+-- ── DATA CORRECTIONS ─────────────────────────────────────────
+-- Idempotent. Safe to re-run.
+
+-- Rings are not part of the range. Deactivate rather than delete so any
+-- existing order history that references them stays intact; the storefront
+-- read policy is USING (active = true), so they disappear from the shop.
+UPDATE products SET active = false WHERE category_id = 'rings';
+
+-- Remove them outright only where no order ever referenced them.
+DELETE FROM products
+ WHERE category_id = 'rings'
+   AND id NOT IN (SELECT product_id FROM order_items WHERE product_id IS NOT NULL);
+
+-- Drop the category once nothing points at it.
+DELETE FROM categories
+ WHERE id = 'rings'
+   AND NOT EXISTS (SELECT 1 FROM products WHERE category_id = 'rings');
+
+-- 'charms-phone' and 'charms' are both named "Phone Charms". The former is
+-- empty and duplicates the latter in the nav and footer. Remove if unused.
+DELETE FROM categories
+ WHERE id = 'charms-phone'
+   AND NOT EXISTS (SELECT 1 FROM products WHERE category_id = 'charms-phone');

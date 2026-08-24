@@ -41,7 +41,7 @@ function renderCartDrawer() {
     body.innerHTML = `<div class="cart-empty-state">
       <div style="font-size:3rem;margin-bottom:12px">🛒</div>
       <p style="color:var(--lt);margin-bottom:20px">Your cart is empty</p>
-      <button class="btn-fill btn-sm" onclick="closeCart();renderPage('shop')" style="border-radius:50px">Browse Shop</button>
+      <button class="btn-fill btn-sm" onclick="closeCart();navigate('shop')" style="border-radius:50px">Browse Shop</button>
     </div>`;
     if (ftr) ftr.innerHTML = '';
     return;
@@ -59,8 +59,8 @@ function renderCartDrawer() {
         ${img}<span ${p.image_url ? 'style="display:none"' : ''}>${p.emoji}</span>
       </div>
       <div class="ci-info">
-        <div class="ci-name">${p.name}</div>
-        ${item.variant ? `<div style="font-size:11px;color:var(--lt);margin-bottom:4px">${item.variant}</div>` : ''}
+        <div class="ci-name">${esc(p.name)}</div>
+        ${item.variant ? `<div style="font-size:11px;color:var(--lt);margin-bottom:4px">${esc(item.variant)}</div>` : ''}
         <div class="ci-price">${formatPKR(sp)}</div>
         <div class="ci-qty">
           <button class="qty-btn" onclick="Cart.setQty('${item.key}',${item.qty - 1})">−</button>
@@ -79,8 +79,8 @@ function renderCartDrawer() {
     <div class="cart-total-row"><span>Delivery</span><span>${del === 0 ? '<span style="color:var(--green);font-weight:600">FREE</span>' : formatPKR(del)}</span></div>
     <div class="cart-grand"><span>Total</span><span>${formatPKR(sub + del)}</span></div>
     <p class="cart-note">PKR ${CONFIG.DELIVERY_FEE} delivery · Free above ${formatPKR(CONFIG.FREE_DELIVERY_THRESHOLD)}</p>
-    <button class="btn-block btn-block-fill" onclick="closeCart();renderPage('checkout')">Checkout →</button>
-    <button class="btn-block btn-block-out" onclick="closeCart();renderPage('shop')">Continue Shopping</button>`;
+    <button class="btn-block btn-block-fill" onclick="closeCart();navigate('checkout')">Checkout →</button>
+    <button class="btn-block btn-block-out" onclick="closeCart();navigate('shop')">Continue Shopping</button>`;
 }
 
 function openCart()  { document.getElementById('cartDrawer')?.classList.add('open'); document.getElementById('cartOverlay')?.classList.add('open'); }
@@ -99,13 +99,13 @@ function handleSearch(q) {
     return p.name.toLowerCase().includes(lq) || (p.tags||[]).some(t => t.includes(lq)) || catName(p.category_id).toLowerCase().includes(lq);
   }).slice(0, 7);
 
-  if (!results.length) { wrap.innerHTML = '<div class="search-results-wrap"><div class="search-empty">No results for "' + q + '"</div></div>'; return; }
+  if (!results.length) { wrap.innerHTML = '<div class="search-results-wrap"><div class="search-empty">No results for "' + esc(q) + '"</div></div>'; return; }
   wrap.innerHTML = '<div class="search-results-wrap">' + results.map(p => {
     const img = p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : p.emoji;
-    return `<div class="sr-item" onclick="closeSearch();renderPage('product','${p.id}')">
+    return `<div class="sr-item" onclick="closeSearch();navigate('product','${p.id}')">
       <div class="sr-thumb" style="background:${p.color}">${img}</div>
       <div>
-        <div class="sr-name">${p.name}</div>
+        <div class="sr-name">${esc(p.name)}</div>
         <div class="sr-price">${formatPKR(salePrice(p))}${p.on_sale ? ` <span style="color:var(--sale);font-size:11px">-${p.sale_percent}%</span>` : ''}</div>
       </div>
       ${p.stock_qty <= CONFIG.LOW_STOCK_THRESHOLD && p.stock_qty > 0 ? '<span style="font-size:10px;color:var(--sale);font-weight:700">Only ' + p.stock_qty + ' left!</span>' : ''}
@@ -121,13 +121,13 @@ function productCardHTML(p) {
     : `<span class="pc-price">${formatPKR(p.price)}</span>`;
 
   const imgContent = p.image_url
-    ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<span style=\\"font-size:4rem\\">${p.emoji}</span>'">`
+    ? `<img src="${p.image_url}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<span style=\\"font-size:4rem\\">${p.emoji}</span>'">`
     : `<span style="font-size:4rem">${p.emoji}</span>`;
 
   const stockBadge = !p.in_stock ? '<div class="badge-oos">Sold Out</div>'
     : p.stock_qty <= CONFIG.LOW_STOCK_THRESHOLD && p.stock_qty > 0 ? `<div class="badge-low">Only ${p.stock_qty} left!</div>` : '';
 
-  return `<div class="product-card" onclick="renderPage('product','${p.id}')" role="article" aria-label="${p.name}">
+  return `<div class="product-card" onclick="navigate('product','${p.id}')" role="article" aria-label="${esc(p.name)}">
     <div class="pc-img" style="background:${p.color}">
       ${imgContent}
       <div class="pc-badges">
@@ -141,7 +141,7 @@ function productCardHTML(p) {
     </div>
     <div class="pc-body">
       <div class="pc-cat">${catName(p.category_id)}</div>
-      <div class="pc-name">${p.name}</div>
+      <div class="pc-name">${esc(p.name)}</div>
       <div class="pc-prices">${priceHTML}</div>
       ${p.has_variants ? '<div style="font-size:11px;color:var(--lt);margin-top:4px">Multiple options available</div>' : ''}
     </div>
@@ -171,10 +171,12 @@ function navHTML(active = '') {
       <button class="hamburger" id="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
-      <a class="logo" onclick="renderPage('home')" style="cursor:pointer">Beads <em>n</em> Charms</a>
+      <a class="logo" onclick="navigate('home')" href="/" style="cursor:pointer" aria-label="Beads N Charms home">
+        <img src="/assets/logo.png" alt="Beads N Charms — handmade jewellery Pakistan" width="249" height="249">
+      </a>
       <div class="nav-links" id="navLinks">
-        <span class="nav-link ${active === 'home' ? 'active' : ''}" onclick="renderPage('home')">Home</span>
-        <span class="nav-link ${active === 'shop' ? 'active' : ''}" onclick="renderPage('shop')">Shop</span>
+        <span class="nav-link ${active === 'home' ? 'active' : ''}" onclick="navigate('home')">Home</span>
+        <span class="nav-link ${active === 'shop' ? 'active' : ''}" onclick="navigate('shop')">Shop</span>
         <div class="nav-cats">
           <span class="nav-link" style="cursor:pointer">Collections ▾</span>
           <div class="cat-drop">
@@ -182,21 +184,21 @@ function navHTML(active = '') {
               <span class="ci">✨</span>Charms
               <span style="margin-left:auto;font-size:10px;color:var(--xl)">▶</span>
               <div class="cat-sub-drop">
-                <div class="cat-item" onclick="renderPage('shop','bracelet-base')"><span class="ci">📿</span>Bracelet Base</div>
-                <div class="cat-item" onclick="renderPage('shop','necklace-base')"><span class="ci">💫</span>Necklace Base</div>
-                <div class="cat-item" onclick="renderPage('shop','earring-base')"><span class="ci">🌸</span>Earring Base</div>
+                <div class="cat-item" onclick="navigate('shop','bracelet-base')"><span class="ci">📿</span>Bracelet Base</div>
+                <div class="cat-item" onclick="navigate('shop','necklace-base')"><span class="ci">💫</span>Necklace Base</div>
+                <div class="cat-item" onclick="navigate('shop','earring-base')"><span class="ci">🌸</span>Earring Base</div>
               </div>
             </div>
-            <div class="cat-item" onclick="renderPage('shop','bracelets')"><span class="ci">📿</span>Bracelets</div>
-            <div class="cat-item" onclick="renderPage('shop','necklaces')"><span class="ci">💫</span>Necklaces</div>
-            <div class="cat-item" onclick="renderPage('shop','earrings')"><span class="ci">🌸</span>Earrings</div>
-            <div class="cat-item" onclick="renderPage('shop','charms-phone')"><span class="ci">📱</span>Phone Charms</div>
-            <div class="cat-item" onclick="renderPage('shop','keychains')"><span class="ci">🔑</span>Keychains</div>
-            <div class="cat-item" onclick="renderPage('shop','permanent')"><span class="ci">💜</span>Permanent Jewellery</div>
+            <div class="cat-item" onclick="navigate('shop','bracelets')"><span class="ci">📿</span>Bracelets</div>
+            <div class="cat-item" onclick="navigate('shop','necklaces')"><span class="ci">💫</span>Necklaces</div>
+            <div class="cat-item" onclick="navigate('shop','earrings')"><span class="ci">🌸</span>Earrings</div>
+            <div class="cat-item" onclick="navigate('shop','charms-phone')"><span class="ci">📱</span>Phone Charms</div>
+            <div class="cat-item" onclick="navigate('shop','keychains')"><span class="ci">🔑</span>Keychains</div>
+            <div class="cat-item" onclick="navigate('shop','permanent')"><span class="ci">💜</span>Permanent Jewellery</div>
           </div>
         </div>
-        <span class="nav-link ${active === 'about' ? 'active' : ''}" onclick="renderPage('about')">About</span>
-        <span class="nav-link ${active === 'contact' ? 'active' : ''}" onclick="renderPage('contact')">Contact</span>
+        <span class="nav-link ${active === 'about' ? 'active' : ''}" onclick="navigate('about')">About</span>
+        <span class="nav-link ${active === 'contact' ? 'active' : ''}" onclick="navigate('contact')">Contact</span>
       </div>
       <div class="nav-right">
         <button class="icon-btn" onclick="openSearch()" aria-label="Search">
@@ -218,8 +220,10 @@ function footerHTML() {
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a class="logo" onclick="renderPage('home')" style="cursor:pointer;display:block;margin-bottom:14px">Beads <em>n</em> Charms</a>
-          <p>Pakistan's favourite handmade jewellery brand. Pinterest-inspired rings, beaded bracelets, phone charms & permanent jewellery. COD available nationwide.</p>
+          <a class="logo logo-footer" onclick="navigate('home')" href="/" style="cursor:pointer;display:block;margin-bottom:14px" aria-label="Beads N Charms home">
+            <img src="/assets/logo.png" alt="Beads N Charms" width="249" height="249">
+          </a>
+          <p>Pakistan's favourite handmade jewellery brand. Pinterest-inspired beaded bracelets, phone charms & permanent jewellery. COD available nationwide.</p>
           <div class="socials" style="margin-top:16px">
             <a class="social-btn" href="https://instagram.com/beads_ncharmss" target="_blank" rel="noopener">IG</a>
             <a class="social-btn" href="https://wa.me/${CONFIG.WHATSAPP_NUMBER}" target="_blank">WA</a>
@@ -227,15 +231,18 @@ function footerHTML() {
         </div>
         <div class="footer-col">
           <h4>Collections</h4>
-          <ul>${cats.map(c => `<li><a onclick="renderPage('shop','${c.id}')" style="cursor:pointer">${c.name}</a></li>`).join('')}</ul>
+          <ul>${cats.map(c => `<li><a onclick="navigate('shop','${c.id}')" style="cursor:pointer">${esc(c.name)}</a></li>`).join('')}</ul>
         </div>
         <div class="footer-col">
           <h4>Help</h4>
           <ul>
-            <li><a onclick="renderPage('contact')" style="cursor:pointer">Contact Us</a></li>
-            <li><a onclick="renderPage('track')" style="cursor:pointer">Track Order</a></li>
-            <li><a href="#">Shipping Info</a></li>
-            <li><a href="#">Returns Policy</a></li>
+            <li><a onclick="navigate('contact')" style="cursor:pointer">Contact Us</a></li>
+            <li><a onclick="navigate('track')" style="cursor:pointer">Track Order</a></li>
+            <li><a onclick="navigate('shipping')" href="/shipping" style="cursor:pointer">Shipping &amp; Delivery</a></li>
+            <li><a onclick="navigate('returns')" href="/returns-policy" style="cursor:pointer">Returns &amp; Refunds</a></li>
+            <li><a onclick="navigate('faq')" href="/faq" style="cursor:pointer">FAQ</a></li>
+            <li><a onclick="navigate('privacy')" href="/privacy-policy" style="cursor:pointer">Privacy Policy</a></li>
+            <li><a onclick="navigate('terms')" href="/terms" style="cursor:pointer">Terms &amp; Conditions</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -243,8 +250,8 @@ function footerHTML() {
           <ul>
             <li><a href="https://instagram.com/beads_ncharmss" target="_blank">@beads_ncharmss</a></li>
             <li><a href="https://wa.me/${CONFIG.WHATSAPP_NUMBER}" target="_blank">WhatsApp</a></li>
-            <li><a onclick="renderPage('about')" style="cursor:pointer">Our Story</a></li>
-            <li><a onclick="renderPage('admin')" style="cursor:pointer;opacity:.25;font-size:11px">Admin ↗</a></li>
+            <li><a onclick="navigate('about')" style="cursor:pointer">Our Story</a></li>
+            <li><a onclick="navigate('admin')" style="cursor:pointer;opacity:.25;font-size:11px">Admin ↗</a></li>
           </ul>
         </div>
       </div>

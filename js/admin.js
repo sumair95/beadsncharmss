@@ -31,7 +31,7 @@ function renderAdminLogin() {
       </div>
       <p id="adminErr" style="color:var(--sale);font-size:13px;margin-bottom:14px;display:none"></p>
       <button class="btn-fill" id="adminSignInBtn" onclick="doAdminLogin()" style="width:100%;border-radius:50px;padding:14px;font-size:13px;font-weight:600">Sign In →</button>
-      <button class="btn-ghost" onclick="renderPage('home')" style="width:100%;margin-top:10px;font-size:12px">← Back to Store</button>
+      <button class="btn-ghost" onclick="navigate('home')" style="width:100%;margin-top:10px;font-size:12px">← Back to Store</button>
     </div>
   </div>`;
 }
@@ -83,7 +83,7 @@ function renderAdminPanel() {
         </div>`).join('')}
       </div>
       <div class="as-footer">
-        <button class="btn-ghost" onclick="renderPage('home')" style="width:100%;margin-bottom:8px;font-size:12px">← View Store</button>
+        <button class="btn-ghost" onclick="navigate('home')" style="width:100%;margin-bottom:8px;font-size:12px">← View Store</button>
         <div style="font-size:11px;color:rgba(255,255,255,.3);padding:0 4px 8px;word-break:break-all">${Auth.email()}</div>
         <button class="btn-ghost" onclick="doAdminLogout()" style="width:100%;font-size:12px;opacity:.5">Log Out</button>
       </div>
@@ -131,7 +131,7 @@ function renderAdminDashboard() {
     <div class="admin-card-hdr" style="background:#fff3cd"><h3 style="color:#856404">⚠️ Low Stock Alert</h3></div>
     <div style="padding:16px 24px;display:flex;flex-direction:column;gap:10px">
       ${lowStock.map(p => `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
-        <span>${p.emoji} ${p.name}</span>
+        <span>${p.emoji} ${esc(p.name)}</span>
         <span style="color:var(--sale);font-weight:700">${p.stock_qty} remaining</span>
       </div>`).join('')}
     </div>
@@ -158,7 +158,7 @@ function renderAdminProducts(search = '') {
   <div class="admin-card">
     <div class="admin-card-hdr">
       <h3>All Products</h3>
-      <input class="search-field" placeholder="Search products…" value="${search}" oninput="document.getElementById('adminMain').innerHTML=renderAdminProducts(this.value)">
+      <input class="search-field" placeholder="Search products…" value="${esc(search)}" oninput="document.getElementById('adminMain').innerHTML=renderAdminProducts(this.value)">
     </div>
     <div style="overflow-x:auto"><table class="admin-table"><thead><tr>
       <th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
@@ -173,7 +173,7 @@ function renderAdminProducts(search = '') {
               ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px" onerror="this.outerHTML='${p.emoji}'">` : p.emoji}
             </div>
             <div>
-              <div class="at-name">${p.name}</div>
+              <div class="at-name">${esc(p.name)}</div>
               ${p.featured ? '<span class="status-tag st-featured" style="font-size:10px">Featured</span>' : ''}
               ${p.has_variants ? '<span class="status-tag" style="font-size:10px;background:var(--p5);color:var(--p1)">Has Variants</span>' : ''}
             </div>
@@ -223,8 +223,8 @@ function renderAdminCats() {
       const cnt = prods.filter(p => p.category_id === c.id).length;
       return `<tr>
         <td style="font-size:1.8rem">${c.emoji}</td>
-        <td><strong>${c.name}</strong></td>
-        <td style="color:var(--lt);font-size:13px">${c.description||'-'}</td>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td style="color:var(--lt);font-size:13px">${esc(c.description||'-')}</td>
         <td>${cnt}</td>
         <td><div class="act-btns">
           <button class="act-btn" onclick="openCFM('${c.id}')">✏️</button>
@@ -260,7 +260,7 @@ function renderAdminSales() {
     ${prods.map(p => `<tr>
       <td><div style="display:flex;gap:10px;align-items:center">
         <div class="at-thumb" style="background:${p.color}">${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : p.emoji}</div>
-        <div class="at-name">${p.name}</div>
+        <div class="at-name">${esc(p.name)}</div>
       </div></td>
       <td>${formatPKR(p.price)}</td>
       <td><div style="display:flex;align-items:center;gap:6px">
@@ -299,7 +299,7 @@ async function loadAdminDiscounts() {
     <th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Status</th><th>Actions</th>
   </tr></thead><tbody>
   ${discounts.map(d => `<tr>
-    <td><strong style="font-family:monospace;font-size:14px;color:var(--p1)">${d.code}</strong></td>
+    <td><strong style="font-family:monospace;font-size:14px;color:var(--p1)">${esc(d.code)}</strong></td>
     <td style="text-transform:capitalize">${d.type.replace('_',' ')}</td>
     <td>${d.type==='percent'?d.value+'%':d.type==='fixed'?formatPKR(d.value):'Free Delivery'}</td>
     <td>${d.min_order>0?formatPKR(d.min_order):'-'}</td>
@@ -372,10 +372,10 @@ async function loadAdminOrders() {
   </tr></thead><tbody>
   ${orders.map(o => `<tr>
     <td><strong style="font-family:monospace;font-size:11px">${o.id}</strong></td>
-    <td><div class="at-name">${o.customer_name||'-'}</div><div class="at-sub">${o.customer_phone||''}</div></td>
-    <td style="font-size:12px;color:var(--p2)">${o.customer_email||'-'}</td>
+    <td><div class="at-name">${esc(o.customer_name||'-')}</div><div class="at-sub">${esc(o.customer_phone||'')}</div></td>
+    <td style="font-size:12px;color:var(--p2)">${esc(o.customer_email||'-')}</td>
     <td style="font-weight:600">${formatPKR(o.total)}</td>
-    <td style="text-transform:capitalize;font-size:13px">${o.payment||'cod'}</td>
+    <td style="text-transform:capitalize;font-size:13px">${esc(o.payment||'cod')}</td>
     <td>
       <select class="sort-sel" style="font-size:12px;padding:5px 8px;background:${statusBg[o.status]||'#eee'};color:${statusColor[o.status]||'#333'}"
         onchange="updateOrderStatusAdmin('${o.id}',this.value)">
@@ -385,7 +385,7 @@ async function loadAdminOrders() {
       </select>
     </td>
     <td>
-      <input type="text" placeholder="Add tracking" value="${o.tracking_number||''}" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;width:120px"
+      <input type="text" placeholder="Add tracking" value="${esc(o.tracking_number||'')}" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;width:120px"
         onblur="addTracking('${o.id}',this.value)">
     </td>
     <td style="color:var(--lt);font-size:12px">${new Date(o.created_at).toLocaleDateString()}</td>
@@ -432,9 +432,9 @@ async function loadAdminEmails() {
     <th>Email</th><th>Name</th><th>Source</th><th>Subscribed</th><th>Date</th>
   </tr></thead><tbody>
   ${subs.map(s => `<tr>
-    <td style="color:var(--p1);font-weight:600">${s.email}</td>
-    <td>${s.name||'-'}</td>
-    <td><span class="status-tag ${s.source==='checkout'?'st-active':'st-featured'}">${s.source||'checkout'}</span></td>
+    <td style="color:var(--p1);font-weight:600">${esc(s.email)}</td>
+    <td>${esc(s.name||'-')}</td>
+    <td><span class="status-tag ${s.source==='checkout'?'st-active':'st-featured'}">${esc(s.source||'checkout')}</span></td>
     <td><span class="status-tag ${s.subscribed!==false?'st-active':'st-oos'}">${s.subscribed!==false?'Yes':'No'}</span></td>
     <td style="color:var(--lt);font-size:12px">${new Date(s.created_at).toLocaleDateString()}</td>
   </tr>`).join('')}
@@ -444,7 +444,18 @@ async function loadAdminEmails() {
 function exportEmails() {
   const subs = window._adminSubs || [];
   if (!subs.length) { toast('No subscribers to export', 'err'); return; }
-  const csv = ['Email,Name,Source,Date', ...subs.map(s => `${s.email},"${s.name||''}",${s.source||'checkout'},${new Date(s.created_at).toLocaleDateString()}`)].join('\n');
+  // Quote every cell and neutralise a leading =, +, - or @ so a customer-supplied
+  // name cannot execute as a spreadsheet formula. No HTML escaping here — this
+  // is a file, not markup.
+  const cell = v => {
+    let t = String(v == null ? '' : v);
+    if (/^[=+\-@]/.test(t)) t = "'" + t;
+    return '"' + t.replace(/"/g, '""') + '"';
+  };
+  const csv = ['Email,Name,Source,Date', ...subs.map(s => [
+    s.email, s.name || '', s.source || 'checkout',
+    s.created_at ? new Date(s.created_at).toLocaleDateString() : ''
+  ].map(cell).join(','))].join('\r\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
   a.download = 'beadsncharmss_emails_' + new Date().toISOString().slice(0,10) + '.csv';
@@ -472,9 +483,9 @@ async function loadAdminReviews() {
   </tr></thead><tbody>
   ${reviews.map(r => `<tr>
     <td style="font-size:12px;color:var(--mid)">${r.product_id||'-'}</td>
-    <td><strong>${r.customer_name}</strong></td>
+    <td><strong>${esc(r.customer_name)}</strong></td>
     <td>${starsHTML(r.rating)}</td>
-    <td style="font-size:13px;color:var(--mid);max-width:200px">${r.comment||'-'}</td>
+    <td style="font-size:13px;color:var(--mid);max-width:200px">${esc(r.comment||'-')}</td>
     <td><span class="status-tag ${r.approved?'st-active':'st-pending'}">${r.approved?'Approved':'Pending'}</span></td>
     <td><div class="act-btns">
       ${!r.approved ? `<button class="act-btn" onclick="approveReview('${r.id}',true)" title="Approve" style="color:var(--green)">✓</button>` : ''}
@@ -642,7 +653,7 @@ function previewPFMSale() {
 
 function openPFM(id = null) {
   _pfmEmoji = '📿'; _pfmColor = COLORS[0]; _selectedVariants = {};
-  document.getElementById('pfmCat').innerHTML = DB.getCats().map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  document.getElementById('pfmCat').innerHTML = DB.getCats().map(c => `<option value="${c.id}">${c.emoji} ${esc(c.name)}</option>`).join('');
   document.getElementById('pfmId').value = '';
   document.getElementById('pfmTitle').textContent = 'Add Product';
   ['pfmName','pfmPrice','pfmDesc','pfmTags','pfmSalePct','pfmStockQty','pfmVariantsList'].forEach(f => { const el = document.getElementById(f); if (el) el.value = ''; });

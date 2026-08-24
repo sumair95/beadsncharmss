@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  The store is a single-page app with no per-page URLs, so only the root is
-  listed. Add /shop, /product/<id> etc. here once URL routing is implemented.
--->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://beadsncharmss.com/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://beadsncharmss.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://beadsncharmss.com/shop</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://beadsncharmss.com/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://beadsncharmss.com/contact</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://beadsncharmss.com/track-order</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://beadsncharmss.com/returns-policy</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://beadsncharmss.com/shipping</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://beadsncharmss.com/faq</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/privacy-policy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://beadsncharmss.com/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/bracelets</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/necklaces</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/earrings</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/charms</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/keychains</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://beadsncharmss.com/shop/permanent</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>
