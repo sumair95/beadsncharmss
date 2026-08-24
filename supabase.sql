@@ -176,6 +176,28 @@ CREATE TRIGGER trg_orders_updated     BEFORE UPDATE ON orders     FOR EACH ROW E
 DROP TRIGGER IF EXISTS trg_customers_updated ON customers;
 CREATE TRIGGER trg_customers_updated  BEFORE UPDATE ON customers  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- ── MIGRATE EXISTING TABLES ──────────────────────────────────
+-- CREATE TABLE IF NOT EXISTS leaves a pre-existing table completely alone,
+-- so a database built from an earlier version of this schema would keep its
+-- old columns. These run before the policies below, which reference
+-- products.active — without them the policy step fails with 42703.
+-- ADD COLUMN IF NOT EXISTS is a no-op where the column already exists.
+ALTER TABLE categories   ADD COLUMN IF NOT EXISTS active               BOOLEAN DEFAULT TRUE;
+ALTER TABLE customers    ADD COLUMN IF NOT EXISTS password_hash        TEXT;
+ALTER TABLE order_items  ADD COLUMN IF NOT EXISTS variant              TEXT;
+ALTER TABLE orders       ADD COLUMN IF NOT EXISTS discount_code        TEXT;
+ALTER TABLE orders       ADD COLUMN IF NOT EXISTS discount_amount      INTEGER DEFAULT 0;
+ALTER TABLE orders       ADD COLUMN IF NOT EXISTS tracking_number      TEXT;
+ALTER TABLE orders       ADD COLUMN IF NOT EXISTS whatsapp_sent        BOOLEAN DEFAULT FALSE;
+ALTER TABLE orders       ADD COLUMN IF NOT EXISTS email_sent           BOOLEAN DEFAULT FALSE;
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS image_url            TEXT;
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS images               TEXT[] DEFAULT '{}';
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS has_variants         BOOLEAN DEFAULT FALSE;
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS variants             JSONB DEFAULT '[]';
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS stock_qty            INTEGER DEFAULT 999;
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS low_stock_threshold  INTEGER DEFAULT 5;
+ALTER TABLE products     ADD COLUMN IF NOT EXISTS active               BOOLEAN DEFAULT TRUE;
+
 -- ── ROW LEVEL SECURITY ───────────────────────────────────────
 ALTER TABLE categories       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products         ENABLE ROW LEVEL SECURITY;
