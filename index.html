@@ -206,7 +206,7 @@ async function renderPage(page, data = null) {
   initScrollAnimations();
 
   // Lazy-load admin data
-  if (page === 'admin' && _adminAuthed) {
+  if (page === 'admin' && Auth.isAuthed()) {
     if (_adminSection === 'orders')    loadAdminOrders();
     if (_adminSection === 'emails')    loadAdminEmails();
     if (_adminSection === 'reviews')   loadAdminReviews();

@@ -3,7 +3,6 @@
 //  Full Shopify-equivalent management dashboard
 // ============================================================
 
-let _adminAuthed   = false;
 let _adminSection  = 'dashboard';
 let _pfmEmoji      = '📿';
 let _pfmColor      = COLORS[0];
@@ -13,7 +12,7 @@ const EMOJIS = ['📿','💍','✨','💜','🌸','📱','🔑','🦋','🌙','�
 
 // ── Router ────────────────────────────────────────────────────
 function renderAdmin() {
-  return _adminAuthed ? renderAdminPanel() : renderAdminLogin();
+  return Auth.isAuthed() ? renderAdminPanel() : renderAdminLogin();
 }
 
 function renderAdminLogin() {
@@ -23,24 +22,44 @@ function renderAdminLogin() {
       <div class="logo-big">Beads <em>n</em> Charms</div>
       <div class="logo-sub">STORE ADMIN</div>
       <div class="form-field">
-        <label class="form-label">Password</label>
-        <input class="form-input" id="adminPw" type="password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doAdminLogin()">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="adminEmail" type="email" autocomplete="username" placeholder="you@example.com" onkeydown="if(event.key==='Enter')document.getElementById('adminPw').focus()">
       </div>
-      <p id="adminErr" style="color:var(--sale);font-size:13px;margin-bottom:14px;display:none">Incorrect password. Try again.</p>
-      <button class="btn-fill" onclick="doAdminLogin()" style="width:100%;border-radius:50px;padding:14px;font-size:13px;font-weight:600">Sign In →</button>
+      <div class="form-field">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="adminPw" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')doAdminLogin()">
+      </div>
+      <p id="adminErr" style="color:var(--sale);font-size:13px;margin-bottom:14px;display:none"></p>
+      <button class="btn-fill" id="adminSignInBtn" onclick="doAdminLogin()" style="width:100%;border-radius:50px;padding:14px;font-size:13px;font-weight:600">Sign In →</button>
       <button class="btn-ghost" onclick="renderPage('home')" style="width:100%;margin-top:10px;font-size:12px">← Back to Store</button>
     </div>
   </div>`;
 }
 
-function doAdminLogin() {
-  if (document.getElementById('adminPw')?.value === CONFIG.ADMIN_PASSWORD) {
-    _adminAuthed = true;
+async function doAdminLogin() {
+  const email = document.getElementById('adminEmail')?.value.trim();
+  const pw    = document.getElementById('adminPw')?.value || '';
+  const err   = document.getElementById('adminErr');
+  const btn   = document.getElementById('adminSignInBtn');
+  const fail  = msg => { if (err) { err.textContent = msg; err.style.display = 'block'; } };
+
+  if (!email || !pw) { fail('Enter your email and password.'); return; }
+  if (err) err.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+  try {
+    await Auth.signIn(email, pw);
     renderPage('admin');
-  } else {
-    const e = document.getElementById('adminErr');
-    if (e) e.style.display = 'block';
+  } catch (e) {
+    fail(e.message || 'Sign-in failed.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
   }
+}
+
+async function doAdminLogout() {
+  await Auth.signOut();
+  renderPage('admin');
 }
 
 function renderAdminPanel() {
@@ -65,7 +84,8 @@ function renderAdminPanel() {
       </div>
       <div class="as-footer">
         <button class="btn-ghost" onclick="renderPage('home')" style="width:100%;margin-bottom:8px;font-size:12px">← View Store</button>
-        <button class="btn-ghost" onclick="_adminAuthed=false;renderPage('admin')" style="width:100%;font-size:12px;opacity:.5">Log Out</button>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);padding:0 4px 8px;word-break:break-all">${Auth.email()}</div>
+        <button class="btn-ghost" onclick="doAdminLogout()" style="width:100%;font-size:12px;opacity:.5">Log Out</button>
       </div>
     </aside>
     <main class="admin-main" id="adminMain">${renderAdminSection()}</main>

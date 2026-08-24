@@ -27,7 +27,7 @@ Live at: [beadsncharmss.com](https://beadsncharmss.com)
 
 ## Project Structure
 ```
-bnc-final/
+.
 ├── index.html          # Main entry point
 ├── css/
 │   └── styles.css      # All styles
@@ -45,7 +45,12 @@ bnc-final/
 ### 1. Supabase Database
 1. Go to [supabase.com](https://supabase.com) → your project
 2. SQL Editor → New Query → paste `supabase.sql` → Run
-3. Tables, RLS policies, and seed data are created
+3. Tables, RLS policies, and seed data are created.
+   The script is idempotent — safe to re-run.
+
+### 1b. Create the admin user
+Authentication → Users → **Add user** → set an email + strong password, and
+tick *Auto Confirm User*. That is the login for the admin panel.
 
 ### 2. Local Development
 ```bash
@@ -59,30 +64,31 @@ open index.html
 npx serve .
 ```
 
-### 3. Deploy to Railway
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login and deploy
-railway login
-railway init
-railway up
-```
+### 3. Deploy
+Already wired: Railway builds the `Dockerfile` and deploys on every push to
+`main`. Just `git push`. See `DEPLOY.md`.
 
 ### 4. Connect Domain
-In Railway dashboard → Settings → Domains → Add `beadsncharmss.com`
-Then update DNS at your registrar:
-- CNAME `www` → your-project.railway.app
-- A record → Railway IP
+See `DEPLOY.md` — `beadsncharmss.com` is an apex domain, so a plain CNAME at
+the root will not work with every registrar.
 
 ## Admin Panel
-Visit `/index.html` → scroll to footer → click "Admin ↗"
-Password: `beadsncharms2025` (change in `js/config.js`)
+Footer → **Admin ↗**. Sign in with the **Supabase Auth** user you created
+(Supabase → Authentication → Users → Add user).
+
+There is no password in the source. The panel signs in against Supabase Auth
+and sends the resulting session token instead of the anon key, which is what
+the `TO authenticated` policies in `supabase.sql` grant against. The anon key
+the storefront uses can read the catalogue and insert orders — nothing more.
 
 ## Environment Variables
-No environment variables needed — Supabase keys are in `js/config.js`
-For production, move keys to Railway environment variables.
+None. The Supabase URL and **anon** key in `js/config.js` are public by design
+and safe to ship — RLS is what protects the data, not secrecy of that key.
+Never put the `service_role` key in this repo; it bypasses RLS entirely.
+
+## Deploying
+Railway builds from the `Dockerfile` and redeploys on every push to `main`.
+See `DEPLOY.md` for the full setup, including the apex-domain DNS caveat.
 
 ## Discount Codes (pre-seeded)
 | Code | Type | Value |

@@ -187,23 +187,37 @@ ALTER TABLE reviews          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics        ENABLE ROW LEVEL SECURITY;
 
 -- Public READ
+DROP POLICY IF EXISTS "Public read categories" ON categories;
 CREATE POLICY "Public read categories"    ON categories      FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public read products" ON products;
 CREATE POLICY "Public read products"      ON products        FOR SELECT USING (active = true);
+DROP POLICY IF EXISTS "Public read reviews" ON reviews;
 CREATE POLICY "Public read reviews"       ON reviews         FOR SELECT USING (approved = true);
 
 -- Public INSERT
+DROP POLICY IF EXISTS "Public insert orders" ON orders;
 CREATE POLICY "Public insert orders"      ON orders          FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert order_items" ON order_items;
 CREATE POLICY "Public insert order_items" ON order_items     FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert customers" ON customers;
 CREATE POLICY "Public insert customers"   ON customers       FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert subscribers" ON email_subscribers;
 CREATE POLICY "Public insert subscribers" ON email_subscribers FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert messages" ON contact_messages;
 CREATE POLICY "Public insert messages"    ON contact_messages  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert analytics" ON analytics;
 CREATE POLICY "Public insert analytics"   ON analytics        FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert abandoned" ON abandoned_carts;
 CREATE POLICY "Public insert abandoned"   ON abandoned_carts  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public insert reviews" ON reviews;
 CREATE POLICY "Public insert reviews"     ON reviews          FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public read discounts" ON discount_codes;
 CREATE POLICY "Public read discounts"     ON discount_codes   FOR SELECT USING (active = true);
 
 -- Customer upsert (for account updates)
+DROP POLICY IF EXISTS "Public upsert customers" ON customers;
 CREATE POLICY "Public upsert customers"   ON customers       FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Public update abandoned" ON abandoned_carts;
 CREATE POLICY "Public update abandoned"   ON abandoned_carts FOR UPDATE USING (true);
 
 -- ── STORAGE BUCKET ───────────────────────────────────────────
@@ -212,17 +226,67 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "Public read images" ON storage.objects;
 CREATE POLICY "Public read images"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'product-images');
 
-CREATE POLICY "Public upload images"
-ON storage.objects FOR INSERT
+-- Uploads and overwrites are admin-only. Without the TO authenticated clause,
+-- anyone holding the anon key (it ships publicly in js/config.js) could fill
+-- this bucket with arbitrary files or replace your product photos.
+DROP POLICY IF EXISTS "Public upload images" ON storage.objects;
+DROP POLICY IF EXISTS "Public update images" ON storage.objects;
+
+DROP POLICY IF EXISTS "Admin upload images" ON storage.objects;
+CREATE POLICY "Admin upload images"
+ON storage.objects FOR INSERT TO authenticated
 WITH CHECK (bucket_id = 'product-images');
 
-CREATE POLICY "Public update images"
-ON storage.objects FOR UPDATE
+DROP POLICY IF EXISTS "Admin update images" ON storage.objects;
+CREATE POLICY "Admin update images"
+ON storage.objects FOR UPDATE TO authenticated
 USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Admin delete images" ON storage.objects;
+CREATE POLICY "Admin delete images"
+ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'product-images');
+
+-- ── ADMIN POLICIES (authenticated role only) ─────────────────
+-- The admin panel signs in through Supabase Auth and sends its session token
+-- instead of the anon key, so these grants never reach the public storefront.
+-- Policies are permissive and OR'd together, so authenticated also keeps the
+-- public read access defined above.
+
+-- Catalogue management
+DROP POLICY IF EXISTS "Admin all products"   ON products;
+CREATE POLICY "Admin all products"   ON products       FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin all categories" ON categories;
+CREATE POLICY "Admin all categories" ON categories     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin all discounts"  ON discount_codes;
+CREATE POLICY "Admin all discounts"  ON discount_codes FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin all reviews"    ON reviews;
+CREATE POLICY "Admin all reviews"    ON reviews        FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Order + customer visibility
+DROP POLICY IF EXISTS "Admin read orders"      ON orders;
+CREATE POLICY "Admin read orders"      ON orders            FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin update orders"    ON orders;
+CREATE POLICY "Admin update orders"    ON orders            FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin read order_items" ON order_items;
+CREATE POLICY "Admin read order_items" ON order_items       FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin read customers"   ON customers;
+CREATE POLICY "Admin read customers"   ON customers         FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin read subscribers" ON email_subscribers;
+CREATE POLICY "Admin read subscribers" ON email_subscribers FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin read messages"    ON contact_messages;
+CREATE POLICY "Admin read messages"    ON contact_messages  FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin update messages"  ON contact_messages;
+CREATE POLICY "Admin update messages"  ON contact_messages  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Admin read analytics"   ON analytics;
+CREATE POLICY "Admin read analytics"   ON analytics         FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Admin read abandoned"   ON abandoned_carts;
+CREATE POLICY "Admin read abandoned"   ON abandoned_carts   FOR SELECT TO authenticated USING (true);
 
 -- ── SEED CATEGORIES ──────────────────────────────────────────
 INSERT INTO categories (id, name, emoji, description, sort_order) VALUES

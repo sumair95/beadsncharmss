@@ -9,9 +9,69 @@ const CONFIG = {
   DELIVERY_FEE: 300,
   FREE_DELIVERY_THRESHOLD: 2000,
   LOW_STOCK_THRESHOLD: 5,
-  ADMIN_PASSWORD: 'beadsncharms2025',
   SITE_URL: 'https://beadsncharmss.com',
   CURRENCY: 'PKR',
+};
+// NOTE: there is deliberately no ADMIN_PASSWORD here. Admin access goes
+// through Supabase Auth (see Auth below) so the credential never ships in
+// the source, and RLS can tell the shop owner apart from the public.
+
+// ── Admin auth ────────────────────────────────────────────────
+// Signs in against Supabase Auth and keeps the session token. Admin requests
+// send that token instead of the anon key, which is what the "TO authenticated"
+// policies in supabase.sql key off. The password is never stored anywhere.
+const Auth = {
+  KEY: 'bnc_admin_session',
+  _session: null,
+
+  load() {
+    if (this._session) return this._session;
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      // expires_at is unix seconds; drop the session once it lapses.
+      if (s.expires_at && s.expires_at * 1000 <= Date.now()) { this.clear(); return null; }
+      this._session = s;
+      return s;
+    } catch { this.clear(); return null; }
+  },
+
+  token()    { return this.load()?.access_token || null; },
+  isAuthed() { return !!this.token(); },
+  email()    { return this.load()?.user?.email || ''; },
+
+  async signIn(email, password) {
+    const res = await fetch(CONFIG.SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': CONFIG.SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) {
+      if (res.status === 400 || res.status === 401) throw new Error('Incorrect email or password.');
+      throw new Error('Sign-in failed (' + res.status + '). Check your connection.');
+    }
+    const s = await res.json();
+    this._session = s;
+    try { localStorage.setItem(this.KEY, JSON.stringify(s)); } catch {}
+    return s;
+  },
+
+  async signOut() {
+    const t = this.token();
+    if (t) {
+      fetch(CONFIG.SUPABASE_URL + '/auth/v1/logout', {
+        method: 'POST',
+        headers: { 'apikey': CONFIG.SUPABASE_KEY, 'Authorization': 'Bearer ' + t }
+      }).catch(() => {});
+    }
+    this.clear();
+  },
+
+  clear() {
+    this._session = null;
+    try { localStorage.removeItem(this.KEY); } catch {}
+  }
 };
 
 // ── Raw fetch wrapper ─────────────────────────────────────────
@@ -19,7 +79,8 @@ async function sbFetch(path, opts = {}) {
   const url = CONFIG.SUPABASE_URL + '/rest/v1/' + path;
   const headers = {
     'apikey': CONFIG.SUPABASE_KEY,
-    'Authorization': 'Bearer ' + CONFIG.SUPABASE_KEY,
+    // Admin session token when signed in, anon key otherwise — RLS keys off this.
+    'Authorization': 'Bearer ' + (Auth.token() || CONFIG.SUPABASE_KEY),
     'Content-Type': 'application/json',
     'Prefer': opts.prefer !== undefined ? opts.prefer : 'return=representation'
   };
@@ -43,7 +104,8 @@ async function sbUpload(file, path) {
     method: 'POST',
     headers: {
       'apikey': CONFIG.SUPABASE_KEY,
-      'Authorization': 'Bearer ' + CONFIG.SUPABASE_KEY,
+      // Storage writes are authenticated-only, so this must be the admin token.
+      'Authorization': 'Bearer ' + (Auth.token() || CONFIG.SUPABASE_KEY),
       'x-upsert': 'true',
       'Content-Type': file.type
     },
