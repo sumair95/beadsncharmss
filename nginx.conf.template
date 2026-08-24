@@ -4,6 +4,10 @@
 # below from exactly the pages that need them. Exact matches win over regexes.
 map $uri $cache_control {
     default                                      "public, max-age=3600";
+    # CSS/JS carry no content hash, so a long TTL means a deploy can take an
+    # hour to reach returning visitors. Revalidate instead: ETag makes the
+    # common case a cheap 304.
+    ~*\.(css|js)$                                "no-cache, must-revalidate";
     ~*\.(jpg|jpeg|png|gif|svg|webp|ico|woff2?)$  "public, max-age=2592000, immutable";
     /index.html                                  "no-cache, must-revalidate";
 }

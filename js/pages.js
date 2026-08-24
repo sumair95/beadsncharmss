@@ -698,8 +698,8 @@ function renderContact() {
     <div class="contact-info">
       <h2>Let's Talk <em style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--p2)">Jewellery</em></h2>
       <p>Questions about an order, custom pieces, or permanent jewellery? We reply within a few hours.</p>
-      <div class="contact-item"><div class="contact-icon">📸</div><div><h4>Instagram</h4><p><a href="https://instagram.com/beads_ncharmss" target="_blank" style="color:var(--p1)">@beads_ncharmss</a> — DMs open</p></div></div>
-      <div class="contact-item"><div class="contact-icon">📱</div><div><h4>WhatsApp</h4><p><a href="https://wa.me/${CONFIG.WHATSAPP_NUMBER}" target="_blank" style="color:var(--p1)">+92 320 5586296</a></p></div></div>
+      <div class="contact-item"><div class="contact-icon ig">${brandIcon('instagram',20)}</div><div><h4>Instagram</h4><p><a href="https://instagram.com/beads_ncharmss" target="_blank" style="color:var(--p1)">@beads_ncharmss</a> — DMs open</p></div></div>
+      <div class="contact-item"><div class="contact-icon wa">${brandIcon('whatsapp',20)}</div><div><h4>WhatsApp</h4><p><a href="https://wa.me/${CONFIG.WHATSAPP_NUMBER}" target="_blank" style="color:var(--p1)">+92 320 5586296</a></p></div></div>
       <div class="contact-item"><div class="contact-icon">📍</div><div><h4>Location</h4><p>Pakistan — shipping nationwide, COD available</p></div></div>
       <div class="contact-item"><div class="contact-icon">⏰</div><div><h4>Response Time</h4><p>Within 24 hours on all channels</p></div></div>
     </div>

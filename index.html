@@ -323,6 +323,8 @@ async function renderPage(page, data = null) {
   refreshCartUI();
   startTaglineRotator();
   initScrollAnimations();
+  initCatDropdown();   // nav is re-rendered each page, so re-bind
+  mountWaFloat();
 
   // Lazy-load admin data
   if (page === 'admin' && Auth.isAuthed()) {
@@ -348,6 +350,16 @@ document.addEventListener('keydown', e => {
   history.replaceState({ page: r.page, data: r.data }, '', pathFor(r.page, r.data));
   await renderPage(r.page, r.data);
 })();
+</script>
+<script>
+// Float button lives outside #app so it survives re-renders.
+function mountWaFloat() {
+  if (document.querySelector('.wa-float')) return;
+  if (typeof waFloatHTML !== 'function') return;
+  const d = document.createElement('div');
+  d.innerHTML = waFloatHTML();
+  document.body.appendChild(d.firstElementChild);
+}
 </script>
 </body>
 </html>

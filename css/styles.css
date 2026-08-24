@@ -36,8 +36,7 @@ nav{background:rgba(247,243,238,.96);backdrop-filter:blur(12px);position:sticky;
 /* Bridge the 18px gap between the trigger and the menu. Without this the
    pointer crosses dead space on the way down and the dropdown closes. */
 .nav-cats::after{content:"";position:absolute;top:100%;left:-12px;right:-12px;height:22px}
-.nav-cats:hover .cat-drop,.cat-drop:hover{opacity:1;pointer-events:all;transform:translateY(0);transition-delay:0s}
-.nav-cats:hover .cat-drop{opacity:1;pointer-events:all;transform:translateY(0)}
+.nav-cats:hover .cat-drop,.nav-cats.open .cat-drop{opacity:1;pointer-events:all;transform:translateY(0);transition-delay:0s}
 .cat-drop{position:absolute;top:calc(100% + 18px);left:-12px;background:#fff;border-radius:var(--r12);box-shadow:var(--sh2);border:1px solid rgba(196,168,216,.2);padding:8px;min-width:200px;opacity:0;pointer-events:none;transform:translateY(8px);transition:all .18s;transition-delay:.25s;z-index:200}
 .cat-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;font-size:13px;color:var(--mid);transition:all .18s;cursor:pointer}
 .cat-item:hover{background:var(--p6);color:var(--p1)}
@@ -185,6 +184,22 @@ footer{background:var(--dk);color:rgba(255,255,255,.6);padding:64px 0 0}
 .socials{display:flex;gap:12px}
 .social-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:13px;transition:all .18s}
 .social-btn:hover{border-color:var(--p4);color:var(--p4)}
+.social-btn svg{display:block}
+.social-btn:hover{background:rgba(255,255,255,.06)}
+.social-btn.wa:hover{border-color:#25D366;color:#25D366}
+
+/* Contact page channel icons */
+.contact-icon svg{display:block}
+.contact-icon.ig{background:linear-gradient(45deg,#F58529,#DD2A7B,#8134AF);color:#fff}
+.contact-icon.wa{background:#25D366;color:#fff}
+
+/* Floating WhatsApp button — primary contact channel for a COD store */
+.wa-float{position:fixed;bottom:22px;left:22px;z-index:150;width:54px;height:54px;border-radius:50%;
+  background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 22px rgba(37,211,102,.4);transition:transform .18s,box-shadow .18s}
+.wa-float:hover{transform:scale(1.08);box-shadow:0 8px 28px rgba(37,211,102,.55)}
+.wa-float svg{display:block}
+@media(max-width:768px){.wa-float{bottom:16px;left:16px;width:50px;height:50px}}
 .footer-col h4{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);margin-bottom:18px}
 .footer-col ul li{margin-bottom:10px}
 .footer-col ul li a{font-size:13px;color:rgba(255,255,255,.5);transition:color .18s}
