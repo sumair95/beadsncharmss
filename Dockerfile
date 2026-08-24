@@ -10,6 +10,9 @@ ENV PORT=8080
 ENV NGINX_ENVSUBST_FILTER="^PORT$"
 
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY index.html robots.txt sitemap.xml /usr/share/nginx/html/
+
+# Copy the whole repo minus .dockerignore's exclusions, so new static assets
+# (og-image.jpg, product photos, favicons) are served by just adding the file.
+COPY . /usr/share/nginx/html/
 
 EXPOSE 8080

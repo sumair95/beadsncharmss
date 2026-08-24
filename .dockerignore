@@ -1,0 +1,10 @@
+# Everything not copied into the web root.
+.git
+.gitignore
+.gitattributes
+.dockerignore
+Dockerfile
+nginx.conf.template
+railway.json
+*.md
+node_modules
