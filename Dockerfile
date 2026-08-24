@@ -11,8 +11,12 @@ ENV NGINX_ENVSUBST_FILTER="^PORT$"
 
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
-# Copy the whole repo minus .dockerignore's exclusions, so new static assets
-# (og-image.jpg, product photos, favicons) are served by just adding the file.
+# Copy the repo (minus .dockerignore exclusions) so new static assets —
+# og-image.jpg, product photos, favicons — are served by just adding the file.
 COPY . /usr/share/nginx/html/
+
+# The template has to remain in the build context for the COPY above, so it
+# also lands in the web root. Remove it — it is config, not a public asset.
+RUN rm -f /usr/share/nginx/html/nginx.conf.template
 
 EXPOSE 8080

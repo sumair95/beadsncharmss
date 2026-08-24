@@ -1,10 +1,12 @@
-# Everything not copied into the web root.
+# Kept out of the image entirely.
+# NOTE: nginx.conf.template is deliberately NOT listed here — it must stay in
+# the build context for the COPY that installs it. The Dockerfile removes the
+# stray copy from the web root instead.
 .git
 .gitignore
 .gitattributes
 .dockerignore
 Dockerfile
-nginx.conf.template
 railway.json
 *.md
 node_modules
