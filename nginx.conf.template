@@ -48,6 +48,18 @@ server {
     # could ever reach.
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob: https://kjwhxuqbrcerqfuikcmv.supabase.co; connect-src https://kjwhxuqbrcerqfuikcmv.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
 
+    # ── Never serve config, schema or dotfiles ─────────────────
+    # Defence in depth. .dockerignore and the Dockerfile already try to keep
+    # these out of the web root, but a build that fails to remove one must not
+    # turn into a disclosure. Regex locations are matched before the prefix
+    # location below, so these win.
+    location ~* \.(template|conf|sql|md|ya?ml|toml|ini|bak|log|env)$ {
+        return 404;
+    }
+    location ~ /\. {
+        return 404;
+    }
+
     # ── Routing ────────────────────────────────────────────────
     # Single-page app: unknown paths fall back to the store shell.
     location / {
