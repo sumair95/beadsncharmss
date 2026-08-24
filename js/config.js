@@ -260,7 +260,11 @@ const DB = {
     } catch(e) {
       console.error('Order error:', e);
       dbStatus('Order failed', 'err');
-      return 'ORD-' + Date.now();
+      // Never fabricate an order id. Returning one here made a failed save
+      // look identical to a successful one: the customer saw "Order Placed"
+      // with a real-looking number for an order that was never stored, and
+      // their cart was emptied. The caller must surface this.
+      throw e;
     }
   },
 

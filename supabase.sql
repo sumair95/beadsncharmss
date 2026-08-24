@@ -213,37 +213,46 @@ ALTER TABLE analytics        ENABLE ROW LEVEL SECURITY;
 
 -- Public READ
 DROP POLICY IF EXISTS "Public read categories" ON categories;
-CREATE POLICY "Public read categories"    ON categories      FOR SELECT USING (true);
+CREATE POLICY "Public read categories"    ON categories      FOR SELECT TO anon, authenticated USING (true);
 DROP POLICY IF EXISTS "Public read products" ON products;
-CREATE POLICY "Public read products"      ON products        FOR SELECT USING (active = true);
+CREATE POLICY "Public read products"      ON products        FOR SELECT TO anon, authenticated USING (active = true);
 DROP POLICY IF EXISTS "Public read reviews" ON reviews;
-CREATE POLICY "Public read reviews"       ON reviews         FOR SELECT USING (approved = true);
+CREATE POLICY "Public read reviews"       ON reviews         FOR SELECT TO anon, authenticated USING (approved = true);
 
 -- Public INSERT
 DROP POLICY IF EXISTS "Public insert orders" ON orders;
-CREATE POLICY "Public insert orders"      ON orders          FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert orders"      ON orders          FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert order_items" ON order_items;
-CREATE POLICY "Public insert order_items" ON order_items     FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert order_items" ON order_items     FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert customers" ON customers;
-CREATE POLICY "Public insert customers"   ON customers       FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert customers"   ON customers       FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert subscribers" ON email_subscribers;
-CREATE POLICY "Public insert subscribers" ON email_subscribers FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert subscribers" ON email_subscribers FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert messages" ON contact_messages;
-CREATE POLICY "Public insert messages"    ON contact_messages  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert messages"    ON contact_messages  FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert analytics" ON analytics;
-CREATE POLICY "Public insert analytics"   ON analytics        FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert analytics"   ON analytics        FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert abandoned" ON abandoned_carts;
-CREATE POLICY "Public insert abandoned"   ON abandoned_carts  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert abandoned"   ON abandoned_carts  FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public insert reviews" ON reviews;
-CREATE POLICY "Public insert reviews"     ON reviews          FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public insert reviews"     ON reviews          FOR INSERT TO anon, authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Public read discounts" ON discount_codes;
-CREATE POLICY "Public read discounts"     ON discount_codes   FOR SELECT USING (active = true);
+CREATE POLICY "Public read discounts"     ON discount_codes   FOR SELECT TO anon, authenticated USING (active = true);
 
 -- Customer upsert (for account updates)
 DROP POLICY IF EXISTS "Public upsert customers" ON customers;
-CREATE POLICY "Public upsert customers"   ON customers       FOR UPDATE USING (true);
+CREATE POLICY "Public upsert customers"   ON customers       FOR UPDATE TO anon, authenticated USING (true);
 DROP POLICY IF EXISTS "Public update abandoned" ON abandoned_carts;
-CREATE POLICY "Public update abandoned"   ON abandoned_carts FOR UPDATE USING (true);
+CREATE POLICY "Public update abandoned"   ON abandoned_carts FOR UPDATE TO anon, authenticated USING (true);
+
+
+-- Explicit table privileges. RLS narrows what a GRANT permits — it cannot
+-- widen it — so both have to be right for checkout to work.
+GRANT SELECT                     ON categories, products, discount_codes, reviews TO anon, authenticated;
+GRANT INSERT                     ON orders, order_items, customers, email_subscribers,
+                                    contact_messages, analytics, abandoned_carts, reviews TO anon, authenticated;
+GRANT UPDATE                     ON customers, abandoned_carts TO anon, authenticated;
+GRANT USAGE                      ON SCHEMA public TO anon, authenticated;
 
 -- ── STORAGE BUCKET ───────────────────────────────────────────
 -- Run this in SQL editor too:

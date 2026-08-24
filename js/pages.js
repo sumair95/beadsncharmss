@@ -581,16 +581,26 @@ async function placeOrder() {
   // Save abandoned cart data first (in case they abandon)
   await DB.saveAbandonedCart(email, phone, cartItems);
 
-  const orderId = await DB.saveOrder({
-    name: fn + ' ' + (document.getElementById('coLN')?.value || '').trim(),
-    email, phone, address: addr, city,
-    province: document.getElementById('coProv')?.value || '',
-    notes: document.getElementById('coNotes')?.value || '',
-    payment, subtotal: sub, delivery: del, total,
-    discountCode: _discountData?.code || null,
-    discountAmount: discountAmt,
-    items: cartItems
-  });
+  const fullName = fn + ' ' + (document.getElementById('coLN')?.value || '').trim();
+  let orderId;
+  try {
+    orderId = await DB.saveOrder({
+      name: fullName,
+      email, phone, address: addr, city,
+      province: document.getElementById('coProv')?.value || '',
+      notes: document.getElementById('coNotes')?.value || '',
+      payment, subtotal: sub, delivery: del, total,
+      discountCode: _discountData?.code || null,
+      discountAmount: discountAmt,
+      items: cartItems
+    });
+  } catch (e) {
+    // The order was NOT saved. Keep the cart intact so nothing is lost, and
+    // give the customer a working way to complete the purchase.
+    if (btn) { btn.disabled = false; btn.textContent = 'Place Order ✦'; }
+    showOrderFailure({ name: fullName, phone, address: addr, city, total, items: cartItems });
+    return;
+  }
 
   DB.track('purchase', { order_id: orderId, total });
   Cart.clear();
@@ -598,6 +608,33 @@ async function placeOrder() {
 
   document.getElementById('successOrderId').textContent = orderId;
   document.getElementById('successModal')?.classList.add('open');
+}
+
+// Shown only when the order genuinely failed to save.
+function showOrderFailure(o) {
+  const lines = o.items.map(i => `• ${i.name}${i.variant ? ' (' + i.variant + ')' : ''} x ${i.qty}`).join('\n');
+  const msg = `Hi! My order did not go through on the website. Please confirm it:\n\n${lines}\n\nTotal: PKR ${o.total.toLocaleString()}\nName: ${o.name}\nPhone: ${o.phone}\nAddress: ${o.address}, ${o.city}`;
+  const wa = 'https://wa.me/' + CONFIG.WHATSAPP_NUMBER + '?text=' + encodeURIComponent(msg);
+
+  let el = document.getElementById('orderFailModal');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'orderFailModal';
+    el.className = 'modal-bg';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Order Not Completed</div>
+    <div class="modal-sub">Something went wrong saving your order, so it has <strong>not</strong> been placed.
+      Your cart is safe — nothing was lost. Send us the details on WhatsApp and we will confirm it manually,
+      or try again in a moment.</div>
+    <a class="btn-fill" href="${wa}" target="_blank" rel="noopener"
+       style="display:inline-block;border-radius:50px;padding:14px 32px;font-size:13px;text-decoration:none">Send Order on WhatsApp</a>
+    <button class="btn-outline" onclick="closeModal('orderFailModal')"
+       style="border-radius:50px;padding:14px 28px;font-size:13px;margin-left:8px">Try Again</button>
+  </div>`;
+  el.classList.add('open');
 }
 
 // ── ORDER TRACKING ────────────────────────────────────────────
