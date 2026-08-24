@@ -5,3 +5,7 @@ node_modules/
 Thumbs.db
 *.log
 .railway/
+
+# Local extract of bnc-final.zip — contents merged to the repo root.
+bnc-final/
+claude_cowork/

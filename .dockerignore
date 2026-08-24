@@ -1,6 +1,6 @@
 # Kept out of the image entirely.
-# NOTE: nginx.conf.template is deliberately NOT listed here — it must stay in
-# the build context for the COPY that installs it. The Dockerfile removes the
+# NOTE: nginx.conf.template is deliberately NOT listed — it must stay in the
+# build context for the COPY that installs it. The Dockerfile removes the
 # stray copy from the web root instead.
 .git
 .gitignore
@@ -10,3 +10,10 @@ Dockerfile
 railway.json
 *.md
 node_modules
+
+# Never publish schema/SQL or CI config from the web root.
+*.sql
+supabase/
+.github/
+bnc-final/
+claude_cowork/

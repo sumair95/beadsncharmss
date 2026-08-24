@@ -1,78 +1,97 @@
-# Beads N Charms
+# Beads N Charms — Complete E-Commerce Store
 
-Storefront for **Beads N Charms** — handmade jewellery, Pakistan.
-Live at **https://beadsncharmss.com**
+Pinterest-inspired handmade jewellery store for Pakistan market.
+Live at: [beadsncharmss.com](https://beadsncharmss.com)
 
-A single self-contained `index.html`: markup, styles and app logic in one file,
-talking to Supabase over the REST API. No build step, no framework, no bundler.
+## Tech Stack
+- **Frontend:** Vanilla HTML/CSS/JS — no framework, loads instantly
+- **Database:** Supabase (PostgreSQL) — products, orders, customers
+- **Storage:** Supabase Storage — product images
+- **Hosting:** Railway / Netlify
+- **Domain:** beadsncharmss.com
 
----
+## Features
+- ✅ Full product catalogue with real images
+- ✅ Product variants (size, colour)
+- ✅ Stock quantity tracking + low stock alerts
+- ✅ Discount codes (%, fixed, free delivery)
+- ✅ Order tracking page
+- ✅ Customer reviews
+- ✅ Abandoned cart capture
+- ✅ WhatsApp owner notifications on every order
+- ✅ Email collection (compulsory at checkout)
+- ✅ Analytics dashboard
+- ✅ COD / EasyPaisa / JazzCash checkout
+- ✅ Admin panel (products, orders, emails, discounts, reviews)
+- ✅ SEO optimised for Pakistan
 
-## Stack
+## Project Structure
+```
+bnc-final/
+├── index.html          # Main entry point
+├── css/
+│   └── styles.css      # All styles
+├── js/
+│   ├── config.js       # Supabase config + DB layer
+│   ├── ui.js           # Cart, nav, search, product cards
+│   ├── pages.js        # Page renderers (home, shop, checkout...)
+│   └── admin.js        # Admin panel
+├── supabase.sql        # Run once in Supabase SQL editor
+└── README.md
+```
 
-| Piece | What it is |
-|---|---|
-| Frontend | One static `index.html` — vanilla JS, no dependencies |
-| Data | Supabase REST (`kjwhxuqbrcerqfuikcmv.supabase.co`) |
-| Images | Supabase Storage, bucket `product-images` |
-| Hosting | Railway, nginx in Docker |
-| Domain | beadsncharmss.com |
+## Setup
 
-## Supabase tables
+### 1. Supabase Database
+1. Go to [supabase.com](https://supabase.com) → your project
+2. SQL Editor → New Query → paste `supabase.sql` → Run
+3. Tables, RLS policies, and seed data are created
 
-`categories` · `products` · `orders` · `order_items` · `customers` ·
-`email_subscribers` · `contact_messages`
-
-The catalogue loads from Supabase on boot and is mirrored into `localStorage`,
-which doubles as the offline fallback if the database is unreachable.
-
-## Local development
-
-It's a static file — open it directly, or serve it to get realistic behaviour:
-
+### 2. Local Development
 ```bash
-npx serve .            # then visit http://localhost:3000
+# Clone the repo
+git clone https://github.com/YOUR_USERNAME/beadsncharmss.git
+cd beadsncharmss
+
+# Open in browser (no build step needed)
+open index.html
+# Or use a local server:
+npx serve .
 ```
 
-To test exactly what Railway runs:
-
+### 3. Deploy to Railway
 ```bash
-docker build -t bnc .
-docker run --rm -p 8080:8080 bnc
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login and deploy
+railway login
+railway init
+railway up
 ```
 
-## Deploying
+### 4. Connect Domain
+In Railway dashboard → Settings → Domains → Add `beadsncharmss.com`
+Then update DNS at your registrar:
+- CNAME `www` → your-project.railway.app
+- A record → Railway IP
 
-Railway watches the `main` branch. **Every push to `main` deploys automatically** —
-there is no manual deploy step.
+## Admin Panel
+Visit `/index.html` → scroll to footer → click "Admin ↗"
+Password: `beadsncharms2025` (change in `js/config.js`)
 
-```bash
-git add -A
-git commit -m "your change"
-git push
-```
+## Environment Variables
+No environment variables needed — Supabase keys are in `js/config.js`
+For production, move keys to Railway environment variables.
 
-Build is defined by `Dockerfile` + `nginx.conf.template`; Railway settings live
-in `railway.json`. `index.html` is served with `no-cache` so a deploy reaches
-returning visitors immediately.
+## Discount Codes (pre-seeded)
+| Code | Type | Value |
+|------|------|-------|
+| WELCOME10 | 10% off | All orders |
+| SAVE200 | PKR 200 off | Orders above PKR 1,500 |
+| FREESHIP | Free delivery | All orders |
+| BNC20 | 20% off | Orders above PKR 2,000 |
 
-## Admin panel
-
-Footer → **Admin**. Manage products, categories, bulk sales, orders and the
-email list.
-
-> ⚠️ The admin password is currently a plain string in `index.html`. Anyone
-> viewing source can read it and sign in. See `NEXT_STEPS.md` — this needs to
-> move to Supabase Auth with RLS before the store handles real volume.
-
-## Files
-
-```
-index.html            the entire store
-Dockerfile            nginx:alpine image
-nginx.conf.template   server config; ${PORT} filled in by Railway at boot
-railway.json          builder + health check settings
-robots.txt            crawler rules
-sitemap.xml           sitemap (root only — SPA has no per-page URLs)
-og-image.jpg          MISSING — add a 1200x630 photo for link previews
-```
+## WhatsApp Notifications
+When an order is placed, a WhatsApp message is auto-drafted to your number.
+Update `CONFIG.WHATSAPP_NUMBER` in `js/config.js` to your number.
