@@ -85,10 +85,15 @@ const Auth = {
 // ── Raw fetch wrapper ─────────────────────────────────────────
 async function sbFetch(path, opts = {}) {
   const url = CONFIG.SUPABASE_URL + '/rest/v1/' + path;
+  // Storefront writes pass opts.anon so they always run as the anon role.
+  // Without it, a shop owner who happens to be signed into the admin panel
+  // checks out as `authenticated` and hits a different set of RLS policies
+  // than a real customer — so the owner's own testing does not reflect what
+  // customers experience, in either direction.
+  const auth = opts.anon ? CONFIG.SUPABASE_KEY : (Auth.token() || CONFIG.SUPABASE_KEY);
   const headers = {
     'apikey': CONFIG.SUPABASE_KEY,
-    // Admin session token when signed in, anon key otherwise — RLS keys off this.
-    'Authorization': 'Bearer ' + (Auth.token() || CONFIG.SUPABASE_KEY),
+    'Authorization': 'Bearer ' + auth,
     'Content-Type': 'application/json',
     'Prefer': opts.prefer !== undefined ? opts.prefer : 'return=representation'
   };
@@ -210,14 +215,14 @@ const DB = {
       // The order row carries name, phone and address in its own right.
       try {
         await sbFetch('customers?on_conflict=email', {
-          method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+          method: 'POST', anon: true, prefer: 'resolution=merge-duplicates,return=minimal',
           body: { email: data.email, name: data.name, phone: data.phone, city: data.city, updated_at: now }
         });
       } catch (e) { console.warn('customer record not saved (non-fatal):', e.message); }
 
       try {
         await sbFetch('email_subscribers?on_conflict=email', {
-          method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+          method: 'POST', anon: true, prefer: 'resolution=merge-duplicates,return=minimal',
           body: { email: data.email, name: data.name, source: 'checkout' }
         });
       } catch (e) { console.warn('subscriber not saved (non-fatal):', e.message); }
@@ -225,7 +230,7 @@ const DB = {
       // Insert order — this is the critical path and must still throw on failure.
       const orderId = 'ORD-' + Date.now();
       await sbFetch('orders', {
-        method: 'POST',
+        method: 'POST', anon: true,
         body: {
           id: orderId,
           customer_name: data.name, customer_email: data.email, customer_phone: data.phone,
@@ -243,7 +248,7 @@ const DB = {
       if (data.items?.length) {
         try {
           await sbFetch('order_items', {
-            method: 'POST', prefer: 'return=minimal',
+            method: 'POST', anon: true, prefer: 'return=minimal',
             body: data.items.map(i => ({
               order_id: orderId, product_id: i.id,
               product_name: i.name, variant: i.variant || null,
@@ -301,7 +306,7 @@ const DB = {
   async saveAbandonedCart(email, phone, cartItems) {
     try {
       await sbFetch('abandoned_carts', {
-        method: 'POST',
+        method: 'POST', anon: true,
         body: { email: email||null, phone: phone||null, cart_data: cartItems, created_at: new Date().toISOString() }
       });
     } catch(e) { console.warn('Abandoned cart save failed:', e.message); }
@@ -327,7 +332,7 @@ const DB = {
   async track(event, data = {}) {
     try {
       await sbFetch('analytics', {
-        method: 'POST',
+        method: 'POST', anon: true,
         body: { event, product_id: data.product_id||null, order_id: data.order_id||null, metadata: data, created_at: new Date().toISOString() }
       });
     } catch(e) { /* silent */ }
@@ -335,7 +340,7 @@ const DB = {
 
   // ── Contact ──────────────────────────────────────────────
   async saveContact(data) {
-    try { await sbFetch('contact_messages', { method: 'POST', body: { ...data, created_at: new Date().toISOString() } }); }
+    try { await sbFetch('contact_messages', { method: 'POST', anon: true, body: { ...data, created_at: new Date().toISOString() } }); }
     catch(e) { console.warn('Contact save failed:', e.message); }
   },
 
