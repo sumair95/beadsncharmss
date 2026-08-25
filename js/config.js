@@ -209,23 +209,10 @@ const DB = {
     try {
       const now = new Date().toISOString();
 
-      // Customer directory and mailing list are bookkeeping, not the sale.
-      // These ran first and un-caught, so a permissions problem on either one
-      // aborted the whole order. Never let them cost a sale: log and continue.
-      // The order row carries name, phone and address in its own right.
-      try {
-        await sbFetch('customers?on_conflict=email', {
-          method: 'POST', anon: true, prefer: 'resolution=merge-duplicates,return=minimal',
-          body: { email: data.email, name: data.name, phone: data.phone, city: data.city, updated_at: now }
-        });
-      } catch (e) { console.warn('customer record not saved (non-fatal):', e.message); }
-
-      try {
-        await sbFetch('email_subscribers?on_conflict=email', {
-          method: 'POST', anon: true, prefer: 'resolution=merge-duplicates,return=minimal',
-          body: { email: data.email, name: data.name, source: 'checkout' }
-        });
-      } catch (e) { console.warn('subscriber not saved (non-fatal):', e.message); }
+      // Customer record and mailing-list entry are created by a database
+      // trigger on this insert (migration 001), not from the browser. Doing it
+      // client-side needed public write access to both tables, which meant
+      // anyone with the anon key could overwrite customer rows.
 
       // Insert order — this is the critical path and must still throw on failure.
       const orderId = 'ORD-' + Date.now();
