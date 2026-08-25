@@ -91,11 +91,21 @@ async function sbFetch(path, opts = {}) {
   // than a real customer — so the owner's own testing does not reflect what
   // customers experience, in either direction.
   const auth = opts.anon ? CONFIG.SUPABASE_KEY : (Auth.token() || CONFIG.SUPABASE_KEY);
+
+  // return=representation makes PostgREST do INSERT ... RETURNING *, which
+  // needs SELECT permission on the table. anon deliberately has no SELECT on
+  // orders, analytics, abandoned_carts or contact_messages — customer data
+  // must stay private — so asking for the row back turned a permitted insert
+  // into "42501 new row violates row-level security policy". Anonymous writes
+  // therefore default to return=minimal; nothing reads their response body.
+  const isWrite = opts.method && opts.method !== 'GET';
+  const defaultPrefer = (opts.anon && isWrite) ? 'return=minimal' : 'return=representation';
+
   const headers = {
     'apikey': CONFIG.SUPABASE_KEY,
     'Authorization': 'Bearer ' + auth,
     'Content-Type': 'application/json',
-    'Prefer': opts.prefer !== undefined ? opts.prefer : 'return=representation'
+    'Prefer': opts.prefer !== undefined ? opts.prefer : defaultPrefer
   };
   const res = await fetch(url, {
     method: opts.method || 'GET',
