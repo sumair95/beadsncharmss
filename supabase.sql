@@ -352,6 +352,34 @@ INSERT INTO products (id, name, category_id, price, on_sale, sale_percent, descr
   ('p8','Beaded Friendship Bracelet','bracelets',650,true,23,'Colourful seed bead bracelet in purple, lilac and beige. Adjustable.',ARRAY['bracelet','friendship'],'🌈','linear-gradient(135deg,#EDE6DC,#E8D5F5)',true,22,false,false)
 ON CONFLICT (id) DO NOTHING;
 
+
+-- ── STOCK DECREMENT ──────────────────────────────────────────
+-- Stock used to be decremented by a client-side PATCH on products. The public
+-- role has no UPDATE grant there (correctly - otherwise anyone could rewrite
+-- the catalogue), so that PATCH silently affected zero rows and stock never
+-- moved. Do it in a trigger instead: it runs as the function owner, so it can
+-- update products without opening any client-side privilege.
+CREATE OR REPLACE FUNCTION decrement_stock_on_order_item()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE products
+     SET stock_qty  = GREATEST(0, COALESCE(stock_qty, 0) - NEW.quantity),
+         updated_at = NOW()
+   WHERE id = NEW.product_id
+     AND stock_qty IS DISTINCT FROM 999;   -- 999 means "untracked"
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_decrement_stock ON order_items;
+CREATE TRIGGER trg_decrement_stock
+AFTER INSERT ON order_items
+FOR EACH ROW EXECUTE FUNCTION decrement_stock_on_order_item();
+
 -- ── DATA CORRECTIONS ─────────────────────────────────────────
 -- Idempotent. Safe to re-run.
 
@@ -375,3 +403,9 @@ DELETE FROM categories
 DELETE FROM categories
  WHERE id = 'charms-phone'
    AND NOT EXISTS (SELECT 1 FROM products WHERE category_id = 'charms-phone');
+
+-- Remove rows created by automated connectivity tests.
+DELETE FROM order_items WHERE order_id LIKE 'ORD-SELFTEST-%' OR order_id LIKE 'ORD-DIAGNOSTIC-%';
+DELETE FROM orders      WHERE id       LIKE 'ORD-SELFTEST-%' OR id       LIKE 'ORD-DIAGNOSTIC-%';
+DELETE FROM customers   WHERE email = 'selftest@beadsncharmss.com' OR email = 'diagnostic@example.test';
+DELETE FROM email_subscribers WHERE email = 'selftest@beadsncharmss.com' OR email = 'diagnostic@example.test';

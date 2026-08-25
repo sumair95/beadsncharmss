@@ -203,17 +203,26 @@ const DB = {
     dbStatus('Placing order…', 'saving');
     try {
       const now = new Date().toISOString();
-      // Upsert customer
-      await sbFetch('customers?on_conflict=email', {
-        method: 'POST', prefer: 'resolution=merge-duplicates',
-        body: { email: data.email, name: data.name, phone: data.phone, city: data.city, updated_at: now }
-      });
-      // Add subscriber
-      await sbFetch('email_subscribers?on_conflict=email', {
-        method: 'POST', prefer: 'resolution=merge-duplicates',
-        body: { email: data.email, name: data.name, source: 'checkout' }
-      });
-      // Insert order
+
+      // Customer directory and mailing list are bookkeeping, not the sale.
+      // These ran first and un-caught, so a permissions problem on either one
+      // aborted the whole order. Never let them cost a sale: log and continue.
+      // The order row carries name, phone and address in its own right.
+      try {
+        await sbFetch('customers?on_conflict=email', {
+          method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+          body: { email: data.email, name: data.name, phone: data.phone, city: data.city, updated_at: now }
+        });
+      } catch (e) { console.warn('customer record not saved (non-fatal):', e.message); }
+
+      try {
+        await sbFetch('email_subscribers?on_conflict=email', {
+          method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
+          body: { email: data.email, name: data.name, source: 'checkout' }
+        });
+      } catch (e) { console.warn('subscriber not saved (non-fatal):', e.message); }
+
+      // Insert order — this is the critical path and must still throw on failure.
       const orderId = 'ORD-' + Date.now();
       await sbFetch('orders', {
         method: 'POST',
@@ -228,32 +237,33 @@ const DB = {
           status: 'pending', created_at: now, updated_at: now
         }
       });
-      // Insert items + decrement stock
+      // Past this point the sale is recorded. Everything below is a side
+      // effect, so it must not be able to turn a saved order into a reported
+      // failure — that would make the customer order again and duplicate it.
       if (data.items?.length) {
-        await sbFetch('order_items', {
-          method: 'POST',
-          body: data.items.map(i => ({
-            order_id: orderId, product_id: i.id,
-            product_name: i.name, variant: i.variant || null,
-            price: i.price, quantity: i.qty, subtotal: i.price * i.qty
-          }))
-        });
-        // Decrement stock
-        for (const i of data.items) {
-          const prod = this.getProd(i.id);
-          if (prod && prod.stock_qty !== 999) {
-            await sbFetch(`products?id=eq.${i.id}`, {
-              method: 'PATCH',
-              body: { stock_qty: Math.max(0, (prod.stock_qty || 0) - i.qty), updated_at: now }
-            });
-          }
-        }
+        try {
+          await sbFetch('order_items', {
+            method: 'POST', prefer: 'return=minimal',
+            body: data.items.map(i => ({
+              order_id: orderId, product_id: i.id,
+              product_name: i.name, variant: i.variant || null,
+              price: i.price, quantity: i.qty, subtotal: i.price * i.qty
+            }))
+          });
+        } catch (e) { console.error('order_items failed for ' + orderId + ':', e.message); }
       }
-      // Use discount code
-      if (data.discountCode) await this.useDiscount(data.discountCode);
 
-      // Send WhatsApp notification to owner
-      this.notifyOwnerWhatsApp(orderId, data);
+      // Stock is decremented by a database trigger on order_items, not here —
+      // the public role has no UPDATE grant on products (deliberately), so a
+      // client-side PATCH silently affected zero rows and stock never moved.
+
+      if (data.discountCode) {
+        try { await this.useDiscount(data.discountCode); }
+        catch (e) { console.warn('discount usage not recorded:', e.message); }
+      }
+
+      try { this.notifyOwnerWhatsApp(orderId, data); }
+      catch (e) { console.warn('WhatsApp notify failed:', e.message); }
 
       dbStatus('Order placed ✓', 'ok');
       return orderId;
