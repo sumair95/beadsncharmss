@@ -348,7 +348,7 @@ const DB = {
   async subscribe(email, name = '') {
     try {
       await sbFetch('email_subscribers?on_conflict=email', {
-        method: 'POST', prefer: 'resolution=merge-duplicates',
+        method: 'POST', anon: true, prefer: 'resolution=merge-duplicates',
         body: { email, name, source: 'newsletter' }
       });
       return true;
